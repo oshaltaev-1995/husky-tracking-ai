@@ -1,0 +1,8 @@
+{
+  "name": "frontend-placeholder",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "start": "echo 'Generate Angular app with Angular CLI first'"
+  }
+}
