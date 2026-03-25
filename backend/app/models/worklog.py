@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
@@ -8,6 +9,8 @@ from sqlalchemy.sql import func
 
 from app.db.base import Base
 
+if TYPE_CHECKING:
+    from app.models.dog import Dog
 
 class Worklog(Base):
     __tablename__ = "worklogs"

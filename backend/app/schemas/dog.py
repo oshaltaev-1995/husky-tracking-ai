@@ -1,26 +1,32 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
 
 
 class DogBase(BaseModel):
     name: str
+    external_id: int | None = None
+    birth_year: int | None = None
+    sex: str | None = None
+    kennel_row: str | None = None
+    kennel_block: int | None = None
+    home_slot: int | None = None
     primary_role: str | None = None
     can_lead: bool = False
     can_team: bool = True
     can_wheel: bool = False
-    birth_year: int | None = None
-    sex: str | None = None
-    kennel_side: str | None = None
-    home_row: str | None = None
-    home_slot: str | None = None
+    status: str | None = None
     notes: str | None = None
+    is_active: bool = True
 
 
 class DogCreate(DogBase):
-    external_id: int | None = None
+    pass
 
 
 class DogRead(DogBase):
     id: int
-    external_id: int | None = None
+    created_at: datetime
+    updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

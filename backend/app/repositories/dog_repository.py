@@ -1,6 +1,7 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.dog import Dog
+from app.models import Dog
 from app.schemas.dog import DogCreate
 
 
@@ -9,7 +10,12 @@ class DogRepository:
         self.db = db
 
     def list_all(self) -> list[Dog]:
-        return self.db.query(Dog).order_by(Dog.name.asc()).all()
+        stmt = select(Dog).order_by(Dog.name.asc())
+        return list(self.db.execute(stmt).scalars().all())
+
+    def get_by_id(self, dog_id: int) -> Dog | None:
+        stmt = select(Dog).where(Dog.id == dog_id)
+        return self.db.execute(stmt).scalar_one_or_none()
 
     def create(self, payload: DogCreate) -> Dog:
         dog = Dog(**payload.model_dump())

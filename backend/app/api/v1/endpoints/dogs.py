@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,6 +11,14 @@ router = APIRouter()
 @router.get("/", response_model=list[DogRead])
 def list_dogs(db: Session = Depends(get_db)):
     return DogRepository(db).list_all()
+
+
+@router.get("/{dog_id}", response_model=DogRead)
+def get_dog(dog_id: int, db: Session = Depends(get_db)):
+    dog = DogRepository(db).get_by_id(dog_id)
+    if dog is None:
+        raise HTTPException(status_code=404, detail=f"Dog with id={dog_id} not found")
+    return dog
 
 
 @router.post("/", response_model=DogRead, status_code=201)

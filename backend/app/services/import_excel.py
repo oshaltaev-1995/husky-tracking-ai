@@ -33,7 +33,7 @@ def _to_bool(value: Any) -> bool:
     return text in {"1", "true", "yes", "y", "worked", "x"}
 
 
-def _to_int(value: Any, default: int = 0) -> int:
+def _to_int(value: Any, default: int | None = 0) -> int | None:
     if pd.isna(value) or value is None or value == "":
         return default
     try:
@@ -76,14 +76,16 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
     worklogs_created = 0
     worklogs_updated = 0
 
-    # dogs_static: первая строка у тебя служебная, заголовки со 2-й строки
+    # В dogs_static:
+    # row 1 = title
+    # row 2 = description
+    # row 3 = actual headers
     dogs_df = pd.read_excel(
         file_path,
         sheet_name="dogs_static",
-        header=1,
+        header=2,
     )
 
-    # daily_work: обычная таблица
     work_df = pd.read_excel(
         file_path,
         sheet_name="daily_work",
@@ -92,9 +94,9 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
     dogs_df.columns = [str(col).strip() for col in dogs_df.columns]
     work_df.columns = [str(col).strip() for col in work_df.columns]
 
-    # --- Импорт dogs ---
+    # --- Import dogs_static ---
     for _, row in dogs_df.iterrows():
-        name = _normalize_name(row.get("dog_name") or row.get("name"))
+        name = _normalize_name(row.get("dog_name"))
         if not name:
             continue
 
@@ -102,13 +104,17 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
         dog = db.execute(stmt).scalar_one_or_none()
 
         payload = {
+            "external_id": _to_int(row.get("dog_id"), default=None),
+            "birth_year": _to_int(row.get("birth_year"), default=None),
             "sex": _clean_value(row.get("sex")),
-            "birth_year": _to_int(row.get("birth_year"), default=None) if _clean_value(row.get("birth_year")) is not None else None,
-            "age_years": _to_int(row.get("age_years"), default=None) if _clean_value(row.get("age_years")) is not None else None,
-            "status": _clean_value(row.get("status")),
-            "main_role": _clean_value(row.get("main_role")),
             "kennel_row": _clean_value(row.get("kennel_row")),
-            "home_slot": _clean_value(row.get("home_slot")),
+            "kennel_block": _to_int(row.get("kennel_block"), default=None),
+            "home_slot": _to_int(row.get("home_slot"), default=None),
+            "primary_role": _clean_value(row.get("primary_role")),
+            "can_lead": _to_bool(row.get("can_lead")),
+            "can_team": _to_bool(row.get("can_team")),
+            "can_wheel": _to_bool(row.get("can_wheel")),
+            "status": _clean_value(row.get("status")),
             "notes": _clean_value(row.get("notes")),
             "is_active": True,
         }
@@ -118,26 +124,29 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
             db.add(dog)
             dogs_created += 1
         else:
-            dog.sex = payload["sex"]
+            dog.external_id = payload["external_id"]
             dog.birth_year = payload["birth_year"]
-            dog.age_years = payload["age_years"]
-            dog.status = payload["status"]
-            dog.main_role = payload["main_role"]
+            dog.sex = payload["sex"]
             dog.kennel_row = payload["kennel_row"]
+            dog.kennel_block = payload["kennel_block"]
             dog.home_slot = payload["home_slot"]
+            dog.primary_role = payload["primary_role"]
+            dog.can_lead = payload["can_lead"]
+            dog.can_team = payload["can_team"]
+            dog.can_wheel = payload["can_wheel"]
+            dog.status = payload["status"]
             dog.notes = payload["notes"]
             dog.is_active = payload["is_active"]
             dogs_updated += 1
 
     db.flush()
 
-    # Индекс собак по имени
     dogs_by_name = {
         dog.name: dog
         for dog in db.execute(select(Dog)).scalars().all()
     }
 
-    # --- Импорт worklogs ---
+    # --- Import daily_work ---
     for _, row in work_df.iterrows():
         dog_name = _normalize_name(row.get("dog_name"))
         if not dog_name:
@@ -145,7 +154,6 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
 
         dog = dogs_by_name.get(dog_name)
         if dog is None:
-            # если собака есть в daily_work, но нет в dogs_static
             dog = Dog(name=dog_name, is_active=True)
             db.add(dog)
             db.flush()
@@ -166,8 +174,8 @@ def import_excel_to_db(db: Session, file_path: Path = DATA_FILE) -> dict[str, in
             "week_label": _clean_value(row.get("week")),
             "km": _to_float(row.get("km"), default=0.0),
             "worked": _to_bool(row.get("worked")),
-            "programs_10km": _to_int(row.get("programs_10km"), default=0),
-            "programs_3km": _to_int(row.get("programs_3km"), default=0),
+            "programs_10km": _to_int(row.get("programs_10km"), default=0) or 0,
+            "programs_3km": _to_int(row.get("programs_3km"), default=0) or 0,
             "kennel_row": _clean_value(row.get("kennel_row")),
             "home_slot": _clean_value(row.get("home_slot")),
             "status": _clean_value(row.get("status")),
