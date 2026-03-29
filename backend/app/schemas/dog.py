@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.models.enums import AvailabilityStatus, LifecycleStatus
+
 
 class DogBase(BaseModel):
     name: str
@@ -18,6 +20,11 @@ class DogBase(BaseModel):
     status: str | None = None
     notes: str | None = None
     is_active: bool = True
+
+    lifecycle_status: LifecycleStatus = LifecycleStatus.active
+    availability_status: AvailabilityStatus = AvailabilityStatus.available
+    exclude_from_team_builder: bool = False
+    exclude_reason: str | None = None
 
 
 class DogCreate(DogBase):

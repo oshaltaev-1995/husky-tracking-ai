@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.db.base import Base
+from app.models.enums import AvailabilityStatus, LifecycleStatus
 
 if TYPE_CHECKING:
     from app.models.worklog import Worklog
@@ -36,6 +37,19 @@ class Dog(Base):
     status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    lifecycle_status: Mapped[LifecycleStatus] = mapped_column(
+        String(30),
+        nullable=False,
+        default=LifecycleStatus.active,
+    )
+    availability_status: Mapped[AvailabilityStatus] = mapped_column(
+        String(30),
+        nullable=False,
+        default=AvailabilityStatus.available,
+    )
+    exclude_from_team_builder: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    exclude_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

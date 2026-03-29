@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.repositories.dog_repository import DogRepository
 from app.schemas.dog import DogCreate, DogRead
+from app.schemas.dog_status import DogEligibilityRead, DogStatusUpdate
 from app.schemas.risk import DogRiskSummary
 from app.schemas.workload import DogWorkloadSummary
+from app.services.eligibility_service import get_team_builder_eligibility
 from app.services.risk_service import get_dog_risk_summary
 from app.services.workload_service import get_dog_workload_summary
 
@@ -17,12 +19,39 @@ def list_dogs(db: Session = Depends(get_db)):
     return DogRepository(db).list_all()
 
 
+@router.get("/eligible-for-team-builder", response_model=list[DogEligibilityRead])
+def list_eligible_for_team_builder(db: Session = Depends(get_db)):
+    dogs = DogRepository(db).list_team_builder_candidates()
+    return [get_team_builder_eligibility(dog) for dog in dogs if get_team_builder_eligibility(dog).eligible_for_team_builder]
+
+
 @router.get("/{dog_id}", response_model=DogRead)
 def get_dog(dog_id: int, db: Session = Depends(get_db)):
     dog = DogRepository(db).get_by_id(dog_id)
     if dog is None:
         raise HTTPException(status_code=404, detail=f"Dog with id={dog_id} not found")
     return dog
+
+
+@router.patch("/{dog_id}/status", response_model=DogRead)
+def update_dog_status(
+    dog_id: int,
+    payload: DogStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    repo = DogRepository(db)
+    dog = repo.get_by_id(dog_id)
+    if dog is None:
+        raise HTTPException(status_code=404, detail=f"Dog with id={dog_id} not found")
+    return repo.update_status(dog, payload)
+
+
+@router.get("/{dog_id}/eligibility", response_model=DogEligibilityRead)
+def get_dog_eligibility(dog_id: int, db: Session = Depends(get_db)):
+    dog = DogRepository(db).get_by_id(dog_id)
+    if dog is None:
+        raise HTTPException(status_code=404, detail=f"Dog with id={dog_id} not found")
+    return get_team_builder_eligibility(dog)
 
 
 @router.get("/{dog_id}/workload", response_model=DogWorkloadSummary)

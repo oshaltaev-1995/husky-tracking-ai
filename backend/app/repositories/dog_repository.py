@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Dog
 from app.schemas.dog import DogCreate
+from app.schemas.dog_status import DogStatusUpdate
 
 
 class DogRepository:
@@ -23,3 +24,18 @@ class DogRepository:
         self.db.commit()
         self.db.refresh(dog)
         return dog
+
+    def update_status(self, dog: Dog, payload: DogStatusUpdate) -> Dog:
+        data = payload.model_dump(exclude_unset=True)
+
+        for field, value in data.items():
+            setattr(dog, field, value)
+
+        self.db.add(dog)
+        self.db.commit()
+        self.db.refresh(dog)
+        return dog
+
+    def list_team_builder_candidates(self) -> list[Dog]:
+        stmt = select(Dog).order_by(Dog.name.asc())
+        return list(self.db.execute(stmt).scalars().all())
