@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -27,12 +28,13 @@ def get_dog_workload_summary(
     dog_id: int,
     hard_day_km_threshold: float = 10.0,
     recent_days: int = 14,
+    as_of_date: date | None = None,
 ) -> DogWorkloadSummary | None:
     dog = db.execute(select(Dog).where(Dog.id == dog_id)).scalar_one_or_none()
     if dog is None:
         return None
 
-    worklogs = list(
+    all_worklogs = list(
         db.execute(
             select(Worklog)
             .where(Worklog.dog_id == dog_id)
@@ -40,17 +42,34 @@ def get_dog_workload_summary(
         ).scalars().all()
     )
 
+    if as_of_date is not None:
+        worklogs = [w for w in all_worklogs if w.work_date <= as_of_date]
+        evaluation_date = as_of_date
+    else:
+        worklogs = all_worklogs
+        evaluation_date = worklogs[-1].work_date if worklogs else None
+
     total_worklogs = len(worklogs)
     worked_logs = [w for w in worklogs if w.worked]
-    worked_days = len(worked_logs)
+
+    worked_days_unique = sorted({w.work_date for w in worked_logs})
+    worked_days = len(worked_days_unique)
 
     total_km = round(sum(_to_float(w.km) for w in worked_logs), 2)
     average_km_per_worked_day = round(total_km / worked_days, 2) if worked_days > 0 else 0.0
 
-    last_worklog = worklogs[-1] if worklogs else None
-    last_work_date = last_worklog.work_date if last_worklog else None
-    last_day_km = round(_to_float(last_worklog.km), 2) if last_worklog else 0.0
+    last_worked_log = worked_logs[-1] if worked_logs else None
+    last_work_date = last_worked_log.work_date if last_worked_log else None
 
+    km_by_date: dict[date, float] = defaultdict(float)
+    worked_by_date: dict[date, bool] = defaultdict(bool)
+
+    for w in worklogs:
+        km_by_date[w.work_date] += _to_float(w.km)
+        if w.worked:
+            worked_by_date[w.work_date] = True
+
+    last_day_km = 0.0
     km_3d = 0.0
     km_7d = 0.0
     km_14d = 0.0
@@ -61,30 +80,29 @@ def get_dog_workload_summary(
     load_vs_own_average_ratio = 0.0
     last_day_vs_own_average_ratio = 0.0
 
-    if last_work_date is not None:
-        date_3d = last_work_date - timedelta(days=2)
-        date_7d = last_work_date - timedelta(days=6)
-        date_14d = last_work_date - timedelta(days=13)
+    if evaluation_date is not None:
+        last_day_km = round(km_by_date.get(evaluation_date, 0.0), 2)
 
-        logs_3d = [w for w in worklogs if w.work_date >= date_3d]
-        logs_7d = [w for w in worklogs if w.work_date >= date_7d]
-        logs_14d = [w for w in worklogs if w.work_date >= date_14d]
+        date_3d = evaluation_date - timedelta(days=2)
+        date_7d = evaluation_date - timedelta(days=6)
+        date_14d = evaluation_date - timedelta(days=13)
 
-        worked_logs_7d = [w for w in logs_7d if w.worked]
-        worked_logs_14d = [w for w in logs_14d if w.worked]
+        logs_3d = [w for w in worklogs if date_3d <= w.work_date <= evaluation_date]
+        logs_7d = [w for w in worklogs if date_7d <= w.work_date <= evaluation_date]
+        logs_14d = [w for w in worklogs if date_14d <= w.work_date <= evaluation_date]
+
+        worked_days_7d_dates = sorted({w.work_date for w in logs_7d if w.worked})
+        worked_days_14d_dates = sorted({w.work_date for w in logs_14d if w.worked})
 
         km_3d = round(sum(_to_float(w.km) for w in logs_3d), 2)
         km_7d = round(sum(_to_float(w.km) for w in logs_7d), 2)
         km_14d = round(sum(_to_float(w.km) for w in logs_14d), 2)
 
-        worked_days_7d = len(worked_logs_7d)
-        worked_days_14d = len(worked_logs_14d)
+        worked_days_7d = len(worked_days_7d_dates)
+        worked_days_14d = len(worked_days_14d_dates)
 
         if worked_days_7d > 0:
-            recent_avg_km_per_worked_day_7d = round(
-                km_7d / worked_days_7d,
-                2,
-            )
+            recent_avg_km_per_worked_day_7d = round(km_7d / worked_days_7d, 2)
 
         if average_km_per_worked_day > 0:
             load_vs_own_average_ratio = round(
@@ -96,23 +114,24 @@ def get_dog_workload_summary(
                 2,
             )
 
-        last_worked_log = worked_logs[-1] if worked_logs else None
-        if last_worked_log is not None:
-            days_since_last_run = (last_work_date - last_worked_log.work_date).days
+        if last_work_date is not None:
+            days_since_last_run = (evaluation_date - last_work_date).days
 
-    hard_days_count = sum(1 for w in worked_logs if _to_float(w.km) >= hard_day_km_threshold)
+    hard_days_count = sum(
+        1 for work_date, km in km_by_date.items() if worked_by_date.get(work_date) and km >= hard_day_km_threshold
+    )
 
     current_hard_streak = 0
-    for w in reversed(worklogs):
-        if _to_float(w.km) >= hard_day_km_threshold:
+    if evaluation_date is not None and worked_by_date.get(evaluation_date):
+        cursor = evaluation_date
+        while worked_by_date.get(cursor) and km_by_date.get(cursor, 0.0) >= hard_day_km_threshold:
             current_hard_streak += 1
-        else:
-            break
+            cursor -= timedelta(days=1)
 
     recent_worklogs: list[RecentWorklogItem] = []
-    if last_work_date is not None:
-        recent_start = last_work_date - timedelta(days=recent_days - 1)
-        recent_rows = [w for w in worklogs if w.work_date >= recent_start]
+    if evaluation_date is not None:
+        recent_start = evaluation_date - timedelta(days=recent_days - 1)
+        recent_rows = [w for w in worklogs if recent_start <= w.work_date <= evaluation_date]
 
         recent_worklogs = [
             RecentWorklogItem(

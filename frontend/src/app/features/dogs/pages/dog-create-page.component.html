@@ -1,0 +1,151 @@
+<div class="page-card">
+  <div class="page-title create-head">
+    <div>
+      <a class="back-link" routerLink="/dogs">← Back to dogs</a>
+      <h2>Add dog</h2>
+      <p class="muted">Create a new dog profile for kennel operations.</p>
+    </div>
+  </div>
+
+  <div class="helper-box">
+    Creating a dog saves it to the kennel database immediately.
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-box">{{ errorMessage }}</div>
+  }
+
+  <div class="form-grid">
+    <div class="form-card">
+      <h3>Basic info</h3>
+
+      <div class="form-fields">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" type="text" [(ngModel)]="form.name" />
+        </div>
+
+        <div class="field">
+          <label for="birth_year">Birth year</label>
+          <input id="birth_year" type="number" [(ngModel)]="form.birth_year" />
+        </div>
+
+        <div class="field">
+          <label for="sex">Sex</label>
+          <select id="sex" [(ngModel)]="form.sex">
+            <option [ngValue]="null">Not set</option>
+            @for (item of sexOptions; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field field--full">
+          <label for="notes">Notes</label>
+          <textarea id="notes" rows="4" [(ngModel)]="form.notes"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Kennel placement</h3>
+
+      <div class="form-fields">
+        <div class="field">
+          <label for="kennel_row">Kennel row</label>
+          <select id="kennel_row" [(ngModel)]="form.kennel_row">
+            <option [ngValue]="null">Not set</option>
+            @for (item of kennelRowOptions; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="kennel_block">Kennel block</label>
+          <input id="kennel_block" type="number" [(ngModel)]="form.kennel_block" />
+        </div>
+
+        <div class="field">
+          <label for="home_slot">Home slot</label>
+          <input id="home_slot" type="number" [(ngModel)]="form.home_slot" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Role setup</h3>
+
+      <div class="form-fields">
+        <div class="field">
+          <label for="primary_role">Primary role</label>
+          <select id="primary_role" [(ngModel)]="form.primary_role">
+            @for (item of roleOptions; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.can_lead" />
+            <span>Can run as lead</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.can_team" />
+            <span>Can run in team</span>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.can_wheel" />
+            <span>Can run in wheel</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Operational status</h3>
+
+      <div class="form-fields">
+        <div class="field">
+          <label for="lifecycle_status">Lifecycle status</label>
+          <select id="lifecycle_status" [(ngModel)]="form.lifecycle_status">
+            @for (item of lifecycleOptions; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="availability_status">Availability status</label>
+          <select id="availability_status" [(ngModel)]="form.availability_status">
+            @for (item of availabilityOptions; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field field--full">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.exclude_from_team_builder" />
+            <span>Exclude from team builder</span>
+          </label>
+        </div>
+
+        <div class="field field--full">
+          <label for="exclude_reason">Exclude reason</label>
+          <input id="exclude_reason" type="text" [(ngModel)]="form.exclude_reason" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a class="secondary-btn secondary-link" routerLink="/dogs">Cancel</a>
+    <button type="button" class="primary-btn" (click)="saveDog()" [disabled]="isSaving">
+      {{ isSaving ? 'Saving...' : 'Create dog' }}
+    </button>
+  </div>
+</div>

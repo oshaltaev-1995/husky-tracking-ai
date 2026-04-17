@@ -1,0 +1,123 @@
+<div class="page-card">
+  <div class="page-title archive-header">
+    <div>
+      <h2>Archive</h2>
+      <p class="muted">Archived and deceased dogs kept for history and review.</p>
+    </div>
+  </div>
+
+  <div class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-field filter-field--search">
+        <label for="archive-search">Search</label>
+        <input
+          id="archive-search"
+          type="text"
+          placeholder="Search by dog name..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilter()"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="archive-lifecycle">Lifecycle status</label>
+        <select
+          id="archive-lifecycle"
+          [(ngModel)]="lifecycleFilter"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of lifecycleOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="archive-kennel-row">Kennel row</label>
+        <select
+          id="archive-kennel-row"
+          [(ngModel)]="selectedKennelRow"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (row of kennelRows; track row) {
+            <option [value]="row">{{ row }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-actions">
+      <button type="button" class="secondary-btn" (click)="resetFilters()">
+        Reset filters
+      </button>
+      <span class="filters-count muted">{{ filteredDogSummaries.length }} dogs shown</span>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="placeholder-box">Loading archive...</div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="error-box">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && !errorMessage && filteredDogSummaries.length === 0) {
+    <div class="placeholder-box">No archived or deceased dogs found.</div>
+  }
+
+  @if (!isLoading && !errorMessage && filteredDogSummaries.length > 0) {
+    <div class="dogs-grid">
+      @for (summary of filteredDogSummaries; track summary.dog.id) {
+        <a class="dog-card" [routerLink]="['/dogs', summary.dog.id]">
+          <div class="dog-photo-wrap">
+            <app-dog-photo
+              [dogName]="summary.dog.name"
+              [altText]="summary.dog.name + ' photo'"
+            />
+          </div>
+
+          <div class="dog-info">
+            <div class="dog-top-row">
+              <h3>{{ summary.dog.name }}</h3>
+              <span class="age-chip">{{ ageLabel(summary) }}</span>
+            </div>
+
+            <div class="badges-row">
+              <app-status-badge
+                [label]="roleLabel(summary)"
+                [badgeClass]="roleBadgeClass(summary.dog.primary_role)"
+              />
+              <app-status-badge
+                [label]="summary.dog.availability_status || 'unknown'"
+                [badgeClass]="availabilityBadgeClass(summary.dog.availability_status)"
+              />
+              <app-status-badge
+                [label]="summary.dog.lifecycle_status || 'unknown'"
+                [badgeClass]="lifecycleBadgeClass(summary.dog.lifecycle_status)"
+              />
+            </div>
+
+            <div class="meta-row">
+              <span class="label">Kennel:</span>
+              <span>{{ kennelPosition(summary) }}</span>
+            </div>
+
+            <div class="meta-row">
+              <span class="label">Capabilities:</span>
+              <span>{{ capabilities(summary).length ? capabilities(summary).join(', ') : '—' }}</span>
+            </div>
+
+            @if (summary.dog.notes) {
+              <div class="archive-note">
+                {{ summary.dog.notes }}
+              </div>
+            }
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

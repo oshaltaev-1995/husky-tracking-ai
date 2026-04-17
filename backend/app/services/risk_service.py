@@ -33,6 +33,7 @@ def get_dog_risk_summary(
     dog_id: int,
     hard_day_km_threshold: float = 10.0,
     recent_days: int = 14,
+    as_of_date: date | None = None,
 ) -> DogRiskSummary | None:
     dog = db.execute(select(Dog).where(Dog.id == dog_id)).scalar_one_or_none()
     if dog is None:
@@ -43,11 +44,13 @@ def get_dog_risk_summary(
         dog_id=dog_id,
         hard_day_km_threshold=hard_day_km_threshold,
         recent_days=recent_days,
+        as_of_date=as_of_date,
     )
     if workload is None:
         return None
 
-    age_years_estimate = _estimate_age(workload.last_work_date, dog.birth_year)
+    age_reference_date = as_of_date or workload.last_work_date
+    age_years_estimate = _estimate_age(age_reference_date, dog.birth_year)
     age_group = _get_age_group(age_years_estimate)
 
     is_prime_age = age_group == "prime"
@@ -57,10 +60,6 @@ def get_dog_risk_summary(
     flags: list[str] = []
     explanations: list[str] = []
     risk_score = 0
-
-    # ---------------------------
-    # Base load / fatigue-style rules
-    # ---------------------------
 
     if workload.last_day_km >= hard_day_km_threshold:
         flags.append("hard_last_day")
@@ -108,22 +107,15 @@ def get_dog_risk_summary(
         explanations.append("Last day load was heavier than usual for this dog.")
         risk_score += 1
 
-    # Dense working pattern: a lot of active days in a short period
     if workload.worked_days_7d >= 6:
         flags.append("dense_working_week")
         explanations.append("The dog has worked on most days of the last 7-day period.")
         risk_score += 1
 
-    # Recovery / cumulative load note:
-    # a rest day does not erase a heavy recent block
     if workload.last_day_km == 0 and workload.km_7d >= 50:
         flags.append("recent_heavy_block_despite_rest_day")
         explanations.append("The latest day was a rest day, but the recent 7-day workload remains high.")
         risk_score += 1
-
-    # ---------------------------
-    # Age-sensitive adjustments
-    # ---------------------------
 
     if is_aging:
         if workload.last_day_km >= 23:
@@ -173,10 +165,6 @@ def get_dog_risk_summary(
             explanations.append("Senior dog has worked frequently in the last 7 days.")
             risk_score += 1
 
-    # ---------------------------
-    # Usage / underuse signals
-    # ---------------------------
-
     usage_level = "normal"
 
     if workload.days_since_last_run is not None and workload.days_since_last_run >= 5:
@@ -193,10 +181,6 @@ def get_dog_risk_summary(
         flags.append("young_dog_low_usage_context")
         explanations.append("Low usage may be normal for a very young dog or a dog with operational constraints.")
 
-    # ---------------------------
-    # Final risk level calibration
-    # ---------------------------
-
     if risk_score >= 6:
         risk_level = "high"
     elif risk_score >= 3:
@@ -204,9 +188,6 @@ def get_dog_risk_summary(
     else:
         risk_level = "low"
 
-    # Safety bump:
-    # don't keep aging/senior dogs at low risk when there is already
-    # an explicit age-related load warning.
     aging_or_senior_warning = any(
         flag in flags
         for flag in {

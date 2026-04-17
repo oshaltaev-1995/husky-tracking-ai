@@ -31,6 +31,23 @@ class DogCreate(DogBase):
     pass
 
 
+class DogUpdate(BaseModel):
+    name: str | None = None
+    external_id: int | None = None
+    birth_year: int | None = None
+    sex: str | None = None
+    kennel_row: str | None = None
+    kennel_block: int | None = None
+    home_slot: int | None = None
+    primary_role: str | None = None
+    can_lead: bool | None = None
+    can_team: bool | None = None
+    can_wheel: bool | None = None
+    status: str | None = None
+    notes: str | None = None
+    is_active: bool | None = None
+
+
 class DogRead(DogBase):
     id: int
     created_at: datetime

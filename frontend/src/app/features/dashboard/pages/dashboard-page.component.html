@@ -1,0 +1,327 @@
+<div class="dashboard-page">
+  <div class="page-title dashboard-title">
+    <div>
+      <h2>Dashboard</h2>
+      <p class="muted">Operational overview of current kennel state.</p>
+    </div>
+
+    <div class="quick-links">
+      <a routerLink="/dogs" class="quick-link">Dogs</a>
+      <a routerLink="/daily-entry" class="quick-link">Daily Entry</a>
+      <a routerLink="/team-builder" class="quick-link">Team Builder</a>
+    </div>
+  </div>
+
+  <div class="page-card date-toolbar">
+    <div class="toolbar-left">
+      <label for="dashboard-date">Dashboard date</label>
+      <input
+        id="dashboard-date"
+        type="date"
+        [(ngModel)]="selectedDate"
+      />
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="secondary-btn" (click)="loadLatest()" [disabled]="isLoading">
+        Latest
+      </button>
+      <button type="button" class="secondary-btn" (click)="setYesterday()" [disabled]="isLoading">
+        Yesterday
+      </button>
+      <button type="button" class="primary-btn" (click)="applySelectedDate()" [disabled]="isLoading || !selectedDate">
+        Apply date
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="page-card">
+      <div class="placeholder-box">Loading dashboard...</div>
+    </div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="page-card">
+      <div class="error-box">{{ errorMessage }}</div>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage) {
+    @if (overview) {
+      <div class="stats-grid">
+        <a
+          class="stat-card stat-card-link"
+          routerLink="/dogs"
+          [queryParams]="{ as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">Total dogs</span>
+          <strong>{{ overview.total_dogs }}</strong>
+        </a>
+
+        <a
+          class="stat-card stat-card-link"
+          routerLink="/dogs"
+          [queryParams]="{ lifecycle: 'active', as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">Active dogs</span>
+          <strong>{{ overview.active_dogs }}</strong>
+        </a>
+
+        <a
+          class="stat-card stat-card-link"
+          routerLink="/dogs"
+          [queryParams]="{ eligibility: 'eligible', as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">Eligible dogs</span>
+          <strong>{{ overview.eligible_dogs }}</strong>
+        </a>
+
+        <a
+          class="stat-card stat-card-link warning-card"
+          routerLink="/dogs"
+          [queryParams]="{ risk: 'high', as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">High risk dogs</span>
+          <strong>{{ overview.high_risk_dogs }}</strong>
+        </a>
+
+        <a
+          class="stat-card stat-card-link"
+          routerLink="/dogs"
+          [queryParams]="{ risk: 'moderate', as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">Moderate risk dogs</span>
+          <strong>{{ overview.moderate_risk_dogs }}</strong>
+        </a>
+
+        <a
+          class="stat-card stat-card-link info-card"
+          routerLink="/dogs"
+          [queryParams]="{ usage: 'underused', as_of_date: overview.as_of_date }"
+        >
+          <span class="stat-label">Underused dogs</span>
+          <strong>{{ overview.underused_dogs }}</strong>
+        </a>
+      </div>
+    }
+
+    <div class="page-card activity-strip">
+      <div class="activity-item">
+        <span class="activity-label">Viewed date</span>
+        <strong>{{ overview?.as_of_date || '—' }}</strong>
+      </div>
+
+      <div class="activity-item">
+        <span class="activity-label">Worked dogs</span>
+        <strong>{{ overview?.worked_today_dogs ?? '—' }}</strong>
+      </div>
+
+      <div class="activity-item">
+        <span class="activity-label">Total km</span>
+        <strong>{{ overview?.total_km_today ?? '—' }}</strong>
+      </div>
+    </div>
+
+    <div class="page-card">
+      <div class="section-head">
+        <h3>Kennel heatmap</h3>
+        <p class="muted">Housing layout for the selected dashboard date.</p>
+      </div>
+
+      @if (heatmapGroups.length > 0) {
+        <div class="heatmap-groups">
+          @for (group of heatmapGroups; track group.key) {
+            <div class="heatmap-group">
+              <div class="heatmap-group-head">
+                <h4>{{ group.label }}</h4>
+                <span class="muted">{{ group.items.length }} dogs</span>
+              </div>
+
+              <div class="heatmap-cells">
+                @for (item of group.items; track item.dog_id) {
+                  <a
+                    class="heatmap-cell"
+                    [class.heatmap-cell--worked]="item.worked_today"
+                    [class.heatmap-cell--high-risk]="item.risk_level === 'high'"
+                    [class.heatmap-cell--moderate-risk]="item.risk_level === 'moderate'"
+                    [routerLink]="['/dogs', item.dog_id]"
+                  >
+                    <div class="heatmap-slot">
+                      @if (item.home_slot !== null && item.home_slot !== undefined) {
+                        Slot {{ item.home_slot }}
+                      } @else {
+                        No slot
+                      }
+                    </div>
+
+                    <div class="heatmap-name">{{ item.dog_name }}</div>
+
+                    <div class="heatmap-meta">
+                      <span>{{ heatmapWorkedLabel(item) }}</span>
+                      <strong>{{ item.km_today ?? 0 }} km</strong>
+                    </div>
+
+                    <div class="heatmap-badges">
+                      @if (item.risk_level) {
+                        <app-status-badge
+                          [label]="item.risk_level"
+                          [badgeClass]="riskBadgeClass(item.risk_level)"
+                        />
+                      }
+                      @if (item.availability_status && item.availability_status !== 'available') {
+                        <app-status-badge
+                          [label]="item.availability_status"
+                          [badgeClass]="availabilityBadgeClass(item.availability_status)"
+                        />
+                      }
+                    </div>
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="placeholder-box">No heatmap data available.</div>
+      }
+    </div>
+
+    <div class="dashboard-preview-grid">
+      <div class="page-card side-card">
+        <div class="section-head section-head--with-link">
+          <div>
+            <h3>Watchlist</h3>
+            <p class="muted">Top dogs needing attention.</p>
+          </div>
+          <a
+            class="section-link"
+            routerLink="/dogs"
+            [queryParams]="{ risk: 'high', as_of_date: overview?.as_of_date }"
+          >
+            Open list
+          </a>
+        </div>
+
+        @if (watchlist.length > 0) {
+          <div class="note-list">
+            @for (item of watchlist; track item.dog_id) {
+              <a class="note-item" [routerLink]="['/dogs', item.dog_id]">
+                <div class="note-top">
+                  <strong>{{ item.dog_name }}</strong>
+
+                  <div class="mini-badges">
+                    @if (item.risk_level) {
+                      <app-status-badge
+                        [label]="item.risk_level"
+                        [badgeClass]="riskBadgeClass(item.risk_level)"
+                      />
+                    }
+                    @if (item.usage_level) {
+                      <app-status-badge
+                        [label]="item.usage_level"
+                        [badgeClass]="usageBadgeClass(item.usage_level)"
+                      />
+                    }
+                  </div>
+                </div>
+
+                <p>{{ itemReason(item) }}</p>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="placeholder-box small-box">No watchlist items.</div>
+        }
+      </div>
+
+      <div class="page-card side-card">
+        <div class="section-head section-head--with-link">
+          <div>
+            <h3>Planning blockers</h3>
+            <p class="muted">Dogs currently unavailable for planning.</p>
+          </div>
+          <a
+            class="section-link"
+            routerLink="/dogs"
+            [queryParams]="{ availability: 'restricted', as_of_date: overview?.as_of_date }"
+          >
+            Open list
+          </a>
+        </div>
+
+        @if (blockers.length > 0) {
+          <div class="note-list">
+            @for (item of blockers; track item.dog_id) {
+              <a class="note-item" [routerLink]="['/dogs', item.dog_id]">
+                <div class="note-top">
+                  <strong>{{ item.dog_name }}</strong>
+
+                  <div class="mini-badges">
+                    @if (item.availability_status) {
+                      <app-status-badge
+                        [label]="item.availability_status"
+                        [badgeClass]="availabilityBadgeClass(item.availability_status)"
+                      />
+                    }
+                    @if (item.lifecycle_status) {
+                      <app-status-badge
+                        [label]="item.lifecycle_status"
+                        [badgeClass]="lifecycleBadgeClass(item.lifecycle_status)"
+                      />
+                    }
+                  </div>
+                </div>
+
+                <p>{{ itemReason(item) }}</p>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="placeholder-box small-box">No planning blockers.</div>
+        }
+      </div>
+
+      <div class="page-card side-card">
+        <div class="section-head section-head--with-link">
+          <div>
+            <h3>Underused dogs</h3>
+            <p class="muted">Candidates for workload balancing.</p>
+          </div>
+          <a
+            class="section-link"
+            routerLink="/dogs"
+            [queryParams]="{ usage: 'underused', as_of_date: overview?.as_of_date }"
+          >
+            Open list
+          </a>
+        </div>
+
+        @if (underused.length > 0) {
+          <div class="note-list">
+            @for (item of underused; track item.dog_id) {
+              <a class="note-item" [routerLink]="['/dogs', item.dog_id]">
+                <div class="note-top">
+                  <strong>{{ item.dog_name }}</strong>
+
+                  <div class="mini-badges">
+                    @if (item.usage_level) {
+                      <app-status-badge
+                        [label]="item.usage_level"
+                        [badgeClass]="usageBadgeClass(item.usage_level)"
+                      />
+                    }
+                  </div>
+                </div>
+
+                <p>{{ itemReason(item) }}</p>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="placeholder-box small-box">No underused dogs.</div>
+        }
+      </div>
+    </div>
+  }
+</div>

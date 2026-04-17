@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Dog
-from app.schemas.dog import DogCreate
+from app.schemas.dog import DogCreate, DogUpdate
 from app.schemas.dog_status import DogStatusUpdate
 
 
@@ -20,6 +20,17 @@ class DogRepository:
 
     def create(self, payload: DogCreate) -> Dog:
         dog = Dog(**payload.model_dump())
+        self.db.add(dog)
+        self.db.commit()
+        self.db.refresh(dog)
+        return dog
+
+    def update(self, dog: Dog, payload: DogUpdate) -> Dog:
+        data = payload.model_dump(exclude_unset=True)
+
+        for field, value in data.items():
+            setattr(dog, field, value)
+
         self.db.add(dog)
         self.db.commit()
         self.db.refresh(dog)

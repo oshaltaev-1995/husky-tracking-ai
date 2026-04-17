@@ -1,0 +1,122 @@
+<div class="page-card">
+  <div class="page-title create-head">
+    <div>
+      <a class="back-link" [routerLink]="['/dogs', dogId]">← Back to dog profile</a>
+      <h2>Edit dog</h2>
+      <p class="muted">Update dog profile, kennel placement and role settings.</p>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="placeholder-box">Loading dog...</div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="error-box">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && dog) {
+    <div class="form-grid">
+      <div class="form-card">
+        <h3>Basic info</h3>
+
+        <div class="form-fields">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" type="text" [(ngModel)]="form.name" />
+          </div>
+
+          <div class="field">
+            <label for="birth_year">Birth year</label>
+            <input id="birth_year" type="number" [(ngModel)]="form.birth_year" />
+          </div>
+
+          <div class="field">
+            <label for="sex">Sex</label>
+            <select id="sex" [(ngModel)]="form.sex">
+              <option [ngValue]="null">Not set</option>
+              @for (item of sexOptions; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field field--full">
+            <label for="notes">Notes</label>
+            <textarea id="notes" rows="4" [(ngModel)]="form.notes"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>Kennel placement</h3>
+
+        <div class="form-fields">
+          <div class="field">
+            <label for="kennel_row">Kennel row</label>
+            <select id="kennel_row" [(ngModel)]="form.kennel_row">
+              <option [ngValue]="null">Not set</option>
+              @for (item of kennelRowOptions; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="kennel_block">Kennel block</label>
+            <input id="kennel_block" type="number" [(ngModel)]="form.kennel_block" />
+          </div>
+
+          <div class="field">
+            <label for="home_slot">Home slot</label>
+            <input id="home_slot" type="number" [(ngModel)]="form.home_slot" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>Role setup</h3>
+
+        <div class="form-fields">
+          <div class="field">
+            <label for="primary_role">Primary role</label>
+            <select id="primary_role" [(ngModel)]="form.primary_role">
+              @for (item of roleOptions; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="form.can_lead" />
+              <span>Can run as lead</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="form.can_team" />
+              <span>Can run in team</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="form.can_wheel" />
+              <span>Can run in wheel</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="form.is_active" />
+              <span>Active in system</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a class="secondary-btn secondary-link" [routerLink]="['/dogs', dogId]">Cancel</a>
+      <button type="button" class="primary-btn" (click)="saveDog()" [disabled]="isSaving">
+        {{ isSaving ? 'Saving...' : 'Save changes' }}
+      </button>
+    </div>
+  }
+</div>

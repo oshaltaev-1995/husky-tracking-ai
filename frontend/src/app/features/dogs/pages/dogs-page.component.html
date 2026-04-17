@@ -1,0 +1,249 @@
+<div class="page-card">
+  <div class="page-title dogs-header">
+    <div>
+      <h2>Dogs</h2>
+      <p class="muted">Operational dog list with advanced filters.</p>
+    </div>
+
+    <div class="dogs-header-actions">
+      <a routerLink="/dogs/archive" class="secondary-link-btn">Archive</a>
+      <a routerLink="/dogs/new" class="primary-link-btn">Add dog</a>
+    </div>
+  </div>
+
+  <div class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-field filter-field--search">
+        <label for="dog-search">Search</label>
+        <input
+          id="dog-search"
+          type="text"
+          placeholder="Search by dog name..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilter()"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="kennel-row">Kennel row</label>
+        <select
+          id="kennel-row"
+          [(ngModel)]="selectedKennelRow"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (row of kennelRows; track row) {
+            <option [value]="row">{{ row }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="availability">Availability</label>
+        <select
+          id="availability"
+          [(ngModel)]="selectedAvailability"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of availabilityOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="lifecycle">Lifecycle</label>
+        <select
+          id="lifecycle"
+          [(ngModel)]="selectedLifecycle"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of lifecycleOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="role">Role</label>
+        <select
+          id="role"
+          [(ngModel)]="selectedRole"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of roleOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="risk">Risk</label>
+        <select
+          id="risk"
+          [(ngModel)]="selectedRiskLevel"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of riskOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="usage">Usage</label>
+        <select
+          id="usage"
+          [(ngModel)]="selectedUsageLevel"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          @for (item of usageOptions; track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="eligibility">Eligibility</label>
+        <select
+          id="eligibility"
+          [(ngModel)]="eligibilityFilter"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="">All</option>
+          <option value="eligible">Eligible only</option>
+          <option value="not_eligible">Not eligible only</option>
+        </select>
+      </div>
+
+      <div class="filter-field filter-field--checkbox">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="excludedOnly"
+            (ngModelChange)="applyFilter()"
+          />
+          <span>Excluded only</span>
+        </label>
+      </div>
+
+      <div class="filter-field filter-field--checkbox">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="showArchived"
+            (ngModelChange)="applyFilter()"
+          />
+          <span>Show archived and deceased</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="filters-actions">
+      <button type="button" class="secondary-btn" (click)="resetFilters()">
+        Reset filters
+      </button>
+      <span class="filters-count muted"
+        >{{ filteredDogSummaries.length }} dogs shown</span
+      >
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="placeholder-box">Loading dogs...</div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="error-box">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && filteredDogSummaries.length === 0) {
+    <div class="placeholder-box">No dogs found with current filters.</div>
+  }
+
+  @if (!isLoading && !errorMessage && filteredDogSummaries.length > 0) {
+    <div class="dogs-grid">
+      @for (summary of filteredDogSummaries; track summary.dog.id) {
+        <a class="dog-card" [routerLink]="['/dogs', summary.dog.id]">
+          <div class="dog-photo-wrap">
+            <app-dog-photo
+              [dogName]="summary.dog.name"
+              [altText]="summary.dog.name + ' photo'"
+            />
+          </div>
+
+          <div class="dog-info">
+            <div class="dog-top-row">
+              <h3>{{ summary.dog.name }}</h3>
+              <span class="age-chip">{{ ageLabel(summary) }}</span>
+            </div>
+
+            <div class="badges-row">
+              <app-status-badge
+                [label]="roleLabel(summary)"
+                [badgeClass]="roleBadgeClass(summary.dog.primary_role)"
+              />
+              <app-status-badge
+                [label]="summary.dog.availability_status || 'unknown'"
+                [badgeClass]="
+                  availabilityBadgeClass(summary.dog.availability_status)
+                "
+              />
+              <app-status-badge
+                [label]="summary.dog.lifecycle_status || 'unknown'"
+                [badgeClass]="lifecycleBadgeClass(summary.dog.lifecycle_status)"
+              />
+              <app-status-badge
+                [label]="summary.risk_level || 'unknown'"
+                [badgeClass]="riskBadgeClass(summary.risk_level)"
+              />
+              @if (summary.usage_level) {
+                <app-status-badge
+                  [label]="summary.usage_level"
+                  [badgeClass]="usageBadgeClass(summary.usage_level)"
+                />
+              }
+              <app-status-badge
+                [label]="
+                  summary.eligible_for_team_builder
+                    ? 'eligible'
+                    : 'not eligible'
+                "
+                [badgeClass]="
+                  summary.eligible_for_team_builder
+                    ? 'badge-success'
+                    : 'badge-danger'
+                "
+              />
+            </div>
+
+            <div class="meta-row">
+              <span class="label">Kennel:</span>
+              <span>{{ kennelPosition(summary) }}</span>
+            </div>
+
+            <div class="meta-row">
+              <span class="label">Capabilities:</span>
+              <span>{{
+                capabilities(summary).length
+                  ? capabilities(summary).join(", ")
+                  : "—"
+              }}</span>
+            </div>
+
+            @if (summary.dog.exclude_from_team_builder) {
+              <div class="warning-row">Excluded from team builder</div>
+            }
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

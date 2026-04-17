@@ -1,0 +1,165 @@
+<div class="daily-entry-page">
+  <div class="page-card top-card">
+    <div class="page-title top-head">
+      <div>
+        <h2>Daily Entry</h2>
+        <p class="muted">
+          Digital kennel worksheet grouped by housing blocks. Enter 3 km and 10 km runs,
+          total distance is calculated automatically.
+        </p>
+      </div>
+
+      <div class="top-actions">
+        <button type="button" class="secondary-btn" (click)="setYesterday()">Yesterday</button>
+        <button type="button" class="secondary-btn" (click)="setToday()">Today</button>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="date-control">
+        <label for="entry-date">Work date</label>
+        <input id="entry-date" type="date" [(ngModel)]="selectedDate" (change)="onDateChange()" />
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" class="secondary-btn" (click)="clearDay()" [disabled]="isSaving">
+          Reset loaded day
+        </button>
+        <button type="button" class="primary-btn" (click)="saveDay()" [disabled]="isSaving || isLoading">
+          {{ isSaving ? 'Saving...' : 'Save changes' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="helper-box">
+      Existing logs for the selected date are loaded automatically.
+      Save sends only rows with actual values, so untouched dogs are not overwritten.
+    </div>
+
+    @if (successMessage) {
+      <div class="success-box">{{ successMessage }}</div>
+    }
+
+    @if (errorMessage) {
+      <div class="error-box">{{ errorMessage }}</div>
+    }
+  </div>
+
+  @if (isLoading) {
+    <div class="page-card">
+      <div class="placeholder-box">Loading dogs and existing logs for this date...</div>
+    </div>
+  }
+
+  @if (!isLoading) {
+    <div class="groups-grid">
+      @for (group of groups; track group.key) {
+        <div class="page-card group-card">
+          <div class="group-head">
+            <div>
+              <h3>{{ group.label }}</h3>
+              <p class="muted">{{ group.rows.length }} dogs</p>
+            </div>
+
+            <div class="group-summary">
+              <div>
+                <span class="summary-label">Worked</span>
+                <strong>{{ blockWorkedCount(group) }}</strong>
+              </div>
+              <div>
+                <span class="summary-label">KM</span>
+                <strong>{{ blockTotalKm(group) }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="entry-table">
+              <thead>
+                <tr>
+                  <th>Dog</th>
+                  <th>3 km</th>
+                  <th>10 km</th>
+                  <th>Total</th>
+                  <th>Worked</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of group.rows; track row.dog_id) {
+                  <tr>
+                    <td class="dog-cell">
+                      <div class="dog-name">{{ row.dog_name }}</div>
+
+                      @if (showStatusHints(row)) {
+                        <div class="status-hints">
+                          @if (row.availability_status && row.availability_status !== 'available') {
+                            <app-status-badge
+                              [label]="row.availability_status"
+                              [badgeClass]="availabilityBadgeClass(row.availability_status)"
+                            />
+                          }
+                          @if (row.lifecycle_status && row.lifecycle_status !== 'active') {
+                            <app-status-badge
+                              [label]="row.lifecycle_status"
+                              [badgeClass]="lifecycleBadgeClass(row.lifecycle_status)"
+                            />
+                          }
+                        </div>
+                      }
+                    </td>
+
+                    <td>
+                      <div class="counter-control">
+                        <button type="button" (click)="decrement3(row)">−</button>
+                        <input
+                          type="number"
+                          min="0"
+                          [(ngModel)]="row.programs_3km"
+                          (ngModelChange)="onManualCountChange(row)"
+                        />
+                        <button type="button" (click)="increment3(row)">+</button>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div class="counter-control">
+                        <button type="button" (click)="decrement10(row)">−</button>
+                        <input
+                          type="number"
+                          min="0"
+                          [(ngModel)]="row.programs_10km"
+                          (ngModelChange)="onManualCountChange(row)"
+                        />
+                        <button type="button" (click)="increment10(row)">+</button>
+                      </div>
+                    </td>
+
+                    <td>
+                      <strong class="total-km">{{ row.total_km }}</strong>
+                    </td>
+
+                    <td>
+                      <span class="worked-pill" [class.worked-pill--yes]="row.worked">
+                        {{ row.worked ? 'Yes' : 'No' }}
+                      </span>
+                    </td>
+
+                    <td>
+                      <input
+                        class="notes-input"
+                        type="text"
+                        [(ngModel)]="row.notes"
+                        placeholder="Optional note"
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

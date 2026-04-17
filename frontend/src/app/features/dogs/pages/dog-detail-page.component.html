@@ -1,0 +1,373 @@
+<div class="page-card">
+  <div class="page-title detail-topbar">
+    <a class="back-link" routerLink="/dogs">← Back to dogs</a>
+
+    @if (dog) {
+      <a class="edit-link-btn" [routerLink]="['/dogs', dog.id, 'edit']">Edit dog</a>
+    }
+  </div>
+
+  @if (isLoading) {
+    <div class="placeholder-box">Loading dog profile...</div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="error-box">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && dog) {
+    <div class="hero-card">
+      <div class="left-col">
+        <app-dog-photo
+          [dogName]="dog.name"
+          [altText]="dog.name + ' photo'"
+        />
+      </div>
+
+      <div class="right-col">
+        <div class="title-row">
+          <div>
+            <h2>{{ dog.name }}</h2>
+            <p class="muted">Basic dog profile from current backend data.</p>
+          </div>
+
+          <span class="age-chip">{{ ageLabel() }}</span>
+        </div>
+
+        <div class="badges-row">
+          <app-status-badge
+            [label]="roleLabel()"
+            [badgeClass]="roleBadgeClass(dog.primary_role)"
+          />
+          <app-status-badge
+            [label]="dog.availability_status || 'unknown'"
+            [badgeClass]="availabilityBadgeClass(dog.availability_status)"
+          />
+          <app-status-badge
+            [label]="dog.lifecycle_status || 'unknown'"
+            [badgeClass]="lifecycleBadgeClass(dog.lifecycle_status)"
+          />
+
+          @if (risk?.risk_level) {
+            <app-status-badge
+              [label]="'risk: ' + risk!.risk_level"
+              [badgeClass]="riskBadgeClass(risk!.risk_level)"
+            />
+          }
+
+          @if (risk?.usage_level) {
+            <app-status-badge
+              [label]="'usage: ' + risk!.usage_level"
+              [badgeClass]="usageBadgeClass(risk!.usage_level)"
+            />
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (showYoungDogHint()) {
+      <div class="hint-box">
+        <strong>Young dog check.</strong>
+        <span>{{ youngDogHintText() }}</span>
+      </div>
+    }
+
+    <div class="detail-sections">
+      <div class="detail-card">
+        <h3>Operational info</h3>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="label">Kennel</span>
+            <strong>{{ kennelPosition() }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Primary role</span>
+            <strong>{{ roleLabel() }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Availability</span>
+            <strong>{{ dog.availability_status || '—' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Lifecycle</span>
+            <strong>{{ dog.lifecycle_status || '—' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Birth year</span>
+            <strong>{{ dog.birth_year || '—' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Sex</span>
+            <strong>{{ dog.sex || '—' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Operational status</h3>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="lifecycle_status">Lifecycle status</label>
+            <select id="lifecycle_status" [(ngModel)]="statusForm.lifecycle_status">
+              @for (item of lifecycleOptions; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="availability_status">Availability status</label>
+            <select id="availability_status" [(ngModel)]="statusForm.availability_status">
+              @for (item of availabilityOptions; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field field--full">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="statusForm.exclude_from_team_builder" />
+              <span>Exclude from team builder</span>
+            </label>
+          </div>
+
+          <div class="field field--full">
+            <label for="exclude_reason">Exclude reason</label>
+            <input id="exclude_reason" type="text" [(ngModel)]="statusForm.exclude_reason" />
+          </div>
+        </div>
+
+        <div class="status-note">
+          Use <strong>Archived</strong> to hide a dog from operational screens while keeping history.
+        </div>
+
+        @if (statusSuccessMessage) {
+          <div class="success-box">{{ statusSuccessMessage }}</div>
+        }
+
+        @if (statusErrorMessage) {
+          <div class="error-box">{{ statusErrorMessage }}</div>
+        }
+
+        <div class="form-actions inline-actions">
+          <button type="button" class="primary-btn" (click)="saveStatus()" [disabled]="isSavingStatus">
+            {{ isSavingStatus ? 'Saving...' : 'Save status' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Eligibility</h3>
+
+        @if (eligibility) {
+          <div class="badges-row section-badges">
+            <app-status-badge
+              [label]="eligibility.eligible_for_team_builder ? 'eligible' : 'not eligible'"
+              [badgeClass]="eligibility.eligible_for_team_builder ? 'badge-success' : 'badge-danger'"
+            />
+          </div>
+
+          @if (eligibility.reasons.length) {
+            <ul class="reason-list">
+              @for (reason of eligibility.reasons; track reason) {
+                <li>{{ humanizeEligibilityReason(reason) }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="muted">No eligibility reasons provided.</p>
+          }
+        }
+      </div>
+
+      <div class="detail-card">
+        <h3>Workload</h3>
+
+        @if (workload) {
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="label">Historical runs</span>
+              <strong>{{ workload.total_worklogs }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">Historical km</span>
+              <strong>{{ workload.total_km }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">KM last 7d</span>
+              <strong>{{ workload.km_7d }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">KM last 14d</span>
+              <strong>{{ workload.km_14d }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">Worked days 7d</span>
+              <strong>{{ workload.worked_days_7d }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">Worked days 14d</span>
+              <strong>{{ workload.worked_days_14d }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="label">Last run date</span>
+              <strong>{{ workload.last_work_date || '—' }}</strong>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="detail-card">
+        <h3>Risk assessment</h3>
+
+        @if (risk) {
+          <div class="badges-row section-badges">
+            <app-status-badge
+              [label]="'risk: ' + (risk.risk_level || 'unknown')"
+              [badgeClass]="riskBadgeClass(risk.risk_level)"
+            />
+            <app-status-badge
+              [label]="'usage: ' + (risk.usage_level || 'unknown')"
+              [badgeClass]="usageBadgeClass(risk.usage_level)"
+            />
+          </div>
+
+          <div class="notes-box summary-box">
+            <span class="label">Summary</span>
+            <p>{{ riskSummary() }}</p>
+          </div>
+
+          @if (risk.flags.length) {
+            <div class="subsection">
+              <span class="label">Attention points</span>
+              <ul class="reason-list">
+                @for (flag of risk.flags; track flag) {
+                  <li>{{ humanizeRiskFlag(flag) }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (risk.explanations.length > 1) {
+            <div class="subsection">
+              <span class="label">Details</span>
+              <ul class="reason-list">
+                @for (item of risk.explanations.slice(1); track item) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="detail-card">
+        <h3>Capabilities</h3>
+
+        <div class="caps-row">
+          @if (capabilities().length > 0) {
+            @for (cap of capabilities(); track cap) {
+              <app-status-badge
+                [label]="cap"
+                [badgeClass]="roleBadgeClass(cap)"
+              />
+            }
+          } @else {
+            <span class="muted">No capabilities available.</span>
+          }
+        </div>
+
+        <div class="detail-grid extra-top">
+          <div class="detail-item">
+            <span class="label">Can lead</span>
+            <strong>{{ dog.can_lead ? 'Yes' : 'No' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Can team</span>
+            <strong>{{ dog.can_team ? 'Yes' : 'No' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Can wheel</span>
+            <strong>{{ dog.can_wheel ? 'Yes' : 'No' }}</strong>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">Excluded from builder</span>
+            <strong>{{ dog.exclude_from_team_builder ? 'Yes' : 'No' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Recent worklogs</h3>
+
+        @if (recentWorklogs().length > 0) {
+          <div class="worklogs-table-wrap">
+            <table class="worklogs-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Worked</th>
+                  <th>KM</th>
+                  <th>Role</th>
+                  <th>10km</th>
+                  <th>3km</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (log of recentWorklogs(); track log.work_date + '-' + log.km) {
+                  <tr>
+                    <td>{{ log.work_date }}</td>
+                    <td>{{ log.worked ? 'Yes' : 'No' }}</td>
+                    <td>{{ log.km }}</td>
+                    <td>{{ log.main_role || '—' }}</td>
+                    <td>{{ log.programs_10km ?? '—' }}</td>
+                    <td>{{ log.programs_3km ?? '—' }}</td>
+                    <td>{{ log.status || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="muted">No recent worklogs available.</p>
+        }
+      </div>
+
+      @if (dog.exclude_reason || dog.notes) {
+        <div class="detail-card">
+          <h3>Notes</h3>
+
+          @if (dog.exclude_reason) {
+            <div class="notes-box">
+              <span class="label">Exclude reason</span>
+              <p>{{ dog.exclude_reason }}</p>
+            </div>
+          }
+
+          @if (dog.notes) {
+            <div class="notes-box">
+              <span class="label">General notes</span>
+              <p>{{ dog.notes }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
