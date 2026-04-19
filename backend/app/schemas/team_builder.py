@@ -22,9 +22,33 @@ class TeamDogAssignment(BaseModel):
     usage_level: str
 
 
+class HarnessDog(BaseModel):
+    dog_id: int
+    dog_name: str
+    primary_role: str | None = None
+    assigned_role: str
+    risk_level: str
+    usage_level: str
+
+
+class HarnessRow(BaseModel):
+    row_role: str
+    row_type: str  # "pair" | "single"
+    relation: str | None = None  # forced_pair | home_pair | preferred_pair | allowed_pair | single_fallback
+    dogs: list[HarnessDog]
+    warnings: list[str] = []
+
+
+class HarnessLayout(BaseModel):
+    lead_rows: list[HarnessRow]
+    team_rows: list[HarnessRow]
+    wheel_rows: list[HarnessRow]
+
+
 class SuggestedTeam(BaseModel):
     team_number: int
     dogs: list[TeamDogAssignment]
+    layout: HarnessLayout
     warnings: list[str]
 
 

@@ -19,6 +19,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'dashboard/lists/:kind',
+        loadComponent: () =>
+          import('./features/dashboard/pages/dashboard-list-page.component').then(
+            (m) => m.DashboardListPageComponent
+          ),
+      },
+      {
         path: 'dogs',
         loadComponent: () =>
           import('./features/dogs/pages/dogs-page.component').then(

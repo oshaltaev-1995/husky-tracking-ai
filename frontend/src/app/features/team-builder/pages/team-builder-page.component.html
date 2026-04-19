@@ -1,0 +1,275 @@
+<div class="team-builder-page">
+  <div class="page-card top-card">
+    <div class="page-title top-head">
+      <div>
+        <h2>Team Builder</h2>
+        <p class="muted">
+          Build suggested sled teams for one operational slot. The result is a starting plan that the manager can review and adjust.
+        </p>
+      </div>
+    </div>
+
+    <div class="builder-form-grid">
+      <div class="field">
+        <label for="program_type">Program type</label>
+        <select id="program_type" [(ngModel)]="form.program_type">
+          @for (option of programOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="sled_type">Sled type</label>
+        <select id="sled_type" [(ngModel)]="form.sled_type">
+          @for (option of sledOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="team_count">Team count</label>
+        <input id="team_count" type="number" min="1" max="50" [(ngModel)]="form.team_count" />
+      </div>
+
+      <div class="field">
+        <label for="min_dogs_per_team">Min dogs per team</label>
+        <input
+          id="min_dogs_per_team"
+          type="number"
+          min="4"
+          max="10"
+          [(ngModel)]="form.min_dogs_per_team"
+        />
+      </div>
+
+      <div class="field">
+        <label for="max_dogs_per_team">Max dogs per team</label>
+        <input
+          id="max_dogs_per_team"
+          type="number"
+          min="4"
+          max="10"
+          [(ngModel)]="form.max_dogs_per_team"
+        />
+      </div>
+
+      <div class="field field--checkbox">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="form.avoid_high_risk" />
+          <span>Avoid high risk dogs</span>
+        </label>
+      </div>
+
+      <div class="field field--checkbox">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="form.prefer_underused" />
+          <span>Prefer underused dogs</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="primary-btn" (click)="buildTeams()" [disabled]="isLoading">
+        {{ isLoading ? 'Building...' : 'Build teams' }}
+      </button>
+    </div>
+
+    <div class="helper-box">
+      Compact scheme view is used here on purpose: pair and single positions are shown structurally, without oversized dog cards.
+    </div>
+
+    @if (errorMessage) {
+      <div class="error-box">{{ errorMessage }}</div>
+    }
+  </div>
+
+  @if (response?.global_warnings?.length) {
+    <div class="page-card warnings-card">
+      <h3>Global warnings</h3>
+      <ul class="warning-list">
+        @for (warning of response!.global_warnings; track warning) {
+          <li>{{ humanizeWarning(warning) }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (response?.teams?.length) {
+    <div class="teams-grid">
+      @for (team of response!.teams; track team.team_number) {
+        <div class="page-card team-card">
+          <div class="team-card-head">
+            <div>
+              <h3>Team {{ team.team_number }}</h3>
+              <p class="muted">{{ team.dogs.length }} dogs</p>
+            </div>
+          </div>
+
+          @if (team.warnings.length > 0) {
+            <div class="team-warning-box">
+              <span class="section-label">Warnings</span>
+              <ul>
+                @for (warning of team.warnings; track warning) {
+                  <li>{{ humanizeWarning(warning) }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="scheme-card">
+            @for (row of flattenRows(team.layout); track trackRow($index, row)) {
+              <div class="scheme-row">
+                <div class="scheme-row-label">
+                  <span>{{ rowRoleLabel(row.row_role) }}</span>
+                </div>
+
+                <div class="scheme-row-body">
+                  @if (row.row_type === 'single') {
+                    <div class="scheme-single">
+                      @if (row.relation) {
+                        <div class="scheme-relation">
+                          <app-status-badge
+                            [label]="rowRelationLabel(row.relation)"
+                            [badgeClass]="rowRelationBadgeClass(row.relation)"
+                          />
+                        </div>
+                      }
+
+                      @for (dog of row.dogs; track trackHarnessDog($index, dog)) {
+                        <a class="scheme-dog scheme-dog--single" [routerLink]="['/dogs', dog.dog_id]">
+                          <span class="scheme-dog-name">{{ dog.dog_name }}</span>
+                          <span class="scheme-dog-badges">
+                            <app-status-badge
+                              [label]="dog.risk_level"
+                              [badgeClass]="riskBadgeClass(dog.risk_level)"
+                            />
+                            <app-status-badge
+                              [label]="dog.usage_level"
+                              [badgeClass]="usageBadgeClass(dog.usage_level)"
+                            />
+                          </span>
+                        </a>
+                      }
+                    </div>
+                  } @else {
+                    <div class="scheme-pair">
+                      @if (row.relation) {
+                        <div class="scheme-relation">
+                          <app-status-badge
+                            [label]="rowRelationLabel(row.relation)"
+                            [badgeClass]="rowRelationBadgeClass(row.relation)"
+                          />
+                        </div>
+                      }
+
+                      <div class="scheme-pair-line">
+                        @if (row.dogs[0]) {
+                          <a class="scheme-dog" [routerLink]="['/dogs', row.dogs[0].dog_id]">
+                            <span class="scheme-dog-name">{{ row.dogs[0].dog_name }}</span>
+                            <span class="scheme-dog-badges">
+                              <app-status-badge
+                                [label]="row.dogs[0].risk_level"
+                                [badgeClass]="riskBadgeClass(row.dogs[0].risk_level)"
+                              />
+                              <app-status-badge
+                                [label]="row.dogs[0].usage_level"
+                                [badgeClass]="usageBadgeClass(row.dogs[0].usage_level)"
+                              />
+                            </span>
+                          </a>
+                        }
+
+                        <div class="scheme-link"></div>
+
+                        @if (row.dogs[1]) {
+                          <a class="scheme-dog" [routerLink]="['/dogs', row.dogs[1].dog_id]">
+                            <span class="scheme-dog-name">{{ row.dogs[1].dog_name }}</span>
+                            <span class="scheme-dog-badges">
+                              <app-status-badge
+                                [label]="row.dogs[1].risk_level"
+                                [badgeClass]="riskBadgeClass(row.dogs[1].risk_level)"
+                              />
+                              <app-status-badge
+                                [label]="row.dogs[1].usage_level"
+                                [badgeClass]="usageBadgeClass(row.dogs[1].usage_level)"
+                              />
+                            </span>
+                          </a>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (row.warnings.length > 0) {
+                    <div class="row-warning-list">
+                      @for (warning of row.warnings; track warning) {
+                        <span>{{ humanizeWarning(warning) }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (response?.unassigned_dogs?.length) {
+    <div class="page-card">
+      <div class="section-head">
+        <h3>Unassigned dogs</h3>
+        <p class="muted">Eligible dogs left outside the suggested teams.</p>
+      </div>
+
+      <div class="compact-dog-grid">
+        @for (dog of response!.unassigned_dogs; track dog.dog_id) {
+          <a class="compact-dog-card" [routerLink]="['/dogs', dog.dog_id]">
+            <div class="compact-dog-head">
+              <strong>{{ dog.dog_name }}</strong>
+            </div>
+            <div class="dog-badges dog-badges--left">
+              <app-status-badge
+                [label]="dogRoleLabel(dog)"
+                [badgeClass]="'badge-neutral'"
+              />
+              <app-status-badge
+                [label]="dog.risk_level"
+                [badgeClass]="riskBadgeClass(dog.risk_level)"
+              />
+              <app-status-badge
+                [label]="dog.usage_level"
+                [badgeClass]="usageBadgeClass(dog.usage_level)"
+              />
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  @if (response?.excluded_dogs?.length) {
+    <div class="page-card">
+      <div class="section-head">
+        <h3>Excluded dogs</h3>
+        <p class="muted">Dogs filtered out before building due to eligibility, risk, or special rules.</p>
+      </div>
+
+      <div class="excluded-grid">
+        @for (dog of response!.excluded_dogs; track dog.dog_id) {
+          <div class="excluded-card">
+            <h4>{{ dog.dog_name }}</h4>
+            <ul>
+              @for (reason of excludedReasonList(dog); track reason) {
+                <li>{{ reason }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -196,8 +196,8 @@
           </div>
           <a
             class="section-link"
-            routerLink="/dogs"
-            [queryParams]="{ risk: 'high', as_of_date: overview?.as_of_date }"
+            [routerLink]="['/dashboard/lists/watchlist']"
+            [queryParams]="{ as_of_date: overview?.as_of_date }"
           >
             Open list
           </a>
@@ -243,8 +243,8 @@
           </div>
           <a
             class="section-link"
-            routerLink="/dogs"
-            [queryParams]="{ availability: 'restricted', as_of_date: overview?.as_of_date }"
+            [routerLink]="['/dashboard/lists/blockers']"
+            [queryParams]="{ as_of_date: overview?.as_of_date }"
           >
             Open list
           </a>
@@ -290,8 +290,8 @@
           </div>
           <a
             class="section-link"
-            routerLink="/dogs"
-            [queryParams]="{ usage: 'underused', as_of_date: overview?.as_of_date }"
+            [routerLink]="['/dashboard/lists/underused']"
+            [queryParams]="{ as_of_date: overview?.as_of_date }"
           >
             Open list
           </a>

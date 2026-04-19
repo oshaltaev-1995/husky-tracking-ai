@@ -1,0 +1,138 @@
+<div class="dashboard-list-page">
+  <div class="page-card top-card">
+    <div class="page-title top-head">
+      <div>
+        <a class="back-link" routerLink="/dashboard">← Back to dashboard</a>
+        <h2>{{ pageTitle }}</h2>
+        <p class="muted">{{ pageDescription }}</p>
+      </div>
+
+      <div class="kind-links">
+        <a
+          class="kind-link"
+          [class.kind-link--active]="kind === 'watchlist'"
+          [routerLink]="['/dashboard/lists/watchlist']"
+          [queryParams]="{ as_of_date: selectedDate || null }"
+        >
+          Watchlist
+        </a>
+        <a
+          class="kind-link"
+          [class.kind-link--active]="kind === 'blockers'"
+          [routerLink]="['/dashboard/lists/blockers']"
+          [queryParams]="{ as_of_date: selectedDate || null }"
+        >
+          Blockers
+        </a>
+        <a
+          class="kind-link"
+          [class.kind-link--active]="kind === 'underused'"
+          [routerLink]="['/dashboard/lists/underused']"
+          [queryParams]="{ as_of_date: selectedDate || null }"
+        >
+          Underused
+        </a>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="date-control">
+        <label for="list-date">Reference date</label>
+        <input id="list-date" type="date" [(ngModel)]="selectedDate" />
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" class="secondary-btn" (click)="setYesterday()">Yesterday</button>
+        <button type="button" class="secondary-btn" (click)="setToday()">Today</button>
+        <button type="button" class="primary-btn" (click)="applySelectedDate()">
+          Apply date
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="page-card">
+      <div class="placeholder-box">Loading list...</div>
+    </div>
+  }
+
+  @if (!isLoading && errorMessage) {
+    <div class="page-card">
+      <div class="error-box">{{ errorMessage }}</div>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && items.length === 0) {
+    <div class="page-card">
+      <div class="placeholder-box">No items for this date.</div>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && items.length > 0) {
+    <div class="list-grid">
+      @for (item of items; track item.dog_id) {
+        <a class="list-card" [routerLink]="['/dogs', item.dog_id]">
+          <div class="list-card-top">
+            <div class="card-photo">
+              <app-dog-photo
+                [dogName]="item.dog_name"
+                [altText]="item.dog_name + ' photo'"
+              />
+            </div>
+
+            <div class="card-main">
+              <h3>{{ item.dog_name }}</h3>
+
+              <div class="badge-stack">
+                @if (item.risk_level && item.risk_level !== 'n/a') {
+                  <app-status-badge
+                    [label]="item.risk_level"
+                    [badgeClass]="riskBadgeClass(item.risk_level)"
+                  />
+                }
+
+                @if (item.usage_level && item.usage_level !== 'n/a') {
+                  <app-status-badge
+                    [label]="item.usage_level"
+                    [badgeClass]="usageBadgeClass(item.usage_level)"
+                  />
+                }
+
+                @if (item.availability_status && item.availability_status !== 'available') {
+                  <app-status-badge
+                    [label]="item.availability_status"
+                    [badgeClass]="availabilityBadgeClass(item.availability_status)"
+                  />
+                }
+
+                @if (item.lifecycle_status && item.lifecycle_status !== 'active') {
+                  <app-status-badge
+                    [label]="item.lifecycle_status"
+                    [badgeClass]="lifecycleBadgeClass(item.lifecycle_status)"
+                  />
+                }
+              </div>
+
+              <div class="reason-box">
+                <span class="reason-label">Reason</span>
+                <p>{{ itemReason(item) }}</p>
+              </div>
+            </div>
+          </div>
+
+          @if (detailReasons(item).length > 0) {
+            <div class="details-box details-box--full">
+              <span class="reason-label">Details</span>
+              <ul>
+                @for (reason of detailReasons(item); track reason) {
+                  <li>{{ reason }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </a>
+      }
+    </div>
+  }
+</div>
