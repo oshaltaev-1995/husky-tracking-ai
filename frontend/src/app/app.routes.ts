@@ -26,6 +26,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'analytics',
+        loadComponent: () =>
+          import('./features/analytics/pages/analytics-page.component').then(
+            (m) => m.AnalyticsPageComponent
+          ),
+      },
+      {
         path: 'dogs',
         loadComponent: () =>
           import('./features/dogs/pages/dogs-page.component').then(

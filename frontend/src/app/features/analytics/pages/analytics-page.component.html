@@ -1,0 +1,455 @@
+<div class="analytics-page">
+  <div class="page-title analytics-title">
+    <div>
+      <h2>Analytics</h2>
+      <p class="muted">Workload and activity trends by week.</p>
+    </div>
+
+    <div class="quick-links">
+      <a class="quick-link" routerLink="/dashboard">Dashboard</a>
+      <a class="quick-link" routerLink="/dogs">Dogs</a>
+      <a class="quick-link" routerLink="/daily-entry">Daily Entry</a>
+      <a class="quick-link" routerLink="/team-builder">Team Builder</a>
+    </div>
+  </div>
+
+  <div class="page-card filters-card">
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="dateFrom">From</label>
+        <input id="dateFrom" type="date" [(ngModel)]="dateFrom" />
+      </div>
+
+      <div class="filter-field">
+        <label for="dateTo">To</label>
+        <input id="dateTo" type="date" [(ngModel)]="dateTo" />
+      </div>
+
+      <div class="preset-group">
+        <label>Quick range</label>
+        <div class="preset-buttons">
+          <button type="button" class="secondary-btn" (click)="applyPreset(4)">Last 4 weeks</button>
+          <button type="button" class="secondary-btn" (click)="applyPreset(8)">Last 8 weeks</button>
+          <button type="button" class="secondary-btn" (click)="applyPreset(12)">Last 12 weeks</button>
+        </div>
+      </div>
+
+      <div class="apply-wrap">
+        <button type="button" class="primary-btn" (click)="applyFilters()" [disabled]="isLoading()">
+          {{ isLoading() ? 'Loading...' : 'Apply filters' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="compare-toolbar">
+      <div class="compare-field">
+        <label for="weekA">Compare week A</label>
+        <select id="weekA" [(ngModel)]="selectedWeekA">
+          @for (item of weeklyItems(); track item.week_start) {
+            <option [value]="item.week_start">{{ item.week_label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="compare-field">
+        <label for="weekB">Compare week B</label>
+        <select id="weekB" [(ngModel)]="selectedWeekB">
+          @for (item of weeklyItems(); track item.week_start) {
+            <option [value]="item.week_start">{{ item.week_label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="compare-action">
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="compareSelectedWeeks()"
+          [disabled]="!selectedWeekA || !selectedWeekB || isComparing()"
+        >
+          {{ isComparing() ? 'Comparing...' : 'Compare weeks' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="export-toolbar">
+      <div class="export-copy">
+        <strong>Export</strong>
+        <span class="muted">
+          Excel export is compact and manager-friendly. Raw run logs are exported separately as CSV for large periods.
+        </span>
+      </div>
+
+      <div class="export-actions">
+        <button
+          type="button"
+          class="primary-btn"
+          (click)="exportExcelWorkbook()"
+          [disabled]="!weeklyItems().length || isExportingWorkbook()"
+        >
+          {{ isExportingWorkbook() ? 'Exporting Excel...' : 'Export Excel' }}
+        </button>
+
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="exportRawLogsCsv()"
+          [disabled]="!dateFrom || !dateTo || isExportingRawLogs()"
+        >
+          {{ isExportingRawLogs() ? 'Exporting raw logs...' : 'Export Raw Logs CSV' }}
+        </button>
+
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="exportWeeklyCsv()"
+          [disabled]="!weeklyItems().length || isExporting()"
+        >
+          {{ isExporting() ? 'Exporting CSV...' : 'Export Weekly CSV' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-box">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-label">Total km</span>
+      <strong>{{ summary()?.total_km ?? 0 }}</strong>
+      <span class="stat-foot muted">Selected period</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-label">Worked dogs</span>
+      <strong>{{ summary()?.unique_worked_dogs ?? 0 }}</strong>
+      <span class="stat-foot muted">Unique dogs in selected period</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-label">Avg km / worked dog</span>
+      <strong>{{ summary()?.avg_km_per_worked_dog ?? 0 }}</strong>
+      <span class="stat-foot muted">Selected period average</span>
+    </div>
+
+    <div class="stat-card info-card">
+      <span class="stat-label">Latest weekly snapshot</span>
+      <strong>
+        H {{ summary()?.latest_week_snapshot?.high_risk_dogs ?? 0 }}
+        /
+        M {{ summary()?.latest_week_snapshot?.moderate_risk_dogs ?? 0 }}
+        /
+        U {{ summary()?.latest_week_snapshot?.underused_dogs ?? 0 }}
+      </strong>
+      <span class="stat-foot muted">High / moderate / underused</span>
+    </div>
+  </div>
+
+  @if (weeklyItems().length > 0) {
+    <div class="insights-grid">
+      <div class="insight-card">
+        <span class="insight-label">Busiest week</span>
+        <strong>{{ getBusiestWeek()?.total_km ?? 0 }} km</strong>
+        <span class="insight-meta">{{ getBusiestWeek()?.week_label }}</span>
+      </div>
+
+      <div class="insight-card insight-warn">
+        <span class="insight-label">Highest risk week</span>
+        <strong>{{ getHighestRiskWeek()?.high_risk_dogs ?? 0 }} high risk</strong>
+        <span class="insight-meta">{{ getHighestRiskWeek()?.week_label }}</span>
+      </div>
+
+      <div class="insight-card insight-good">
+        <span class="insight-label">Lowest underused week</span>
+        <strong>{{ getLowestUnderusedWeek()?.underused_dogs ?? 0 }} underused</strong>
+        <span class="insight-meta">{{ getLowestUnderusedWeek()?.week_label }}</span>
+      </div>
+
+      <div class="insight-card insight-blue">
+        <span class="insight-label">Best avg km week</span>
+        <strong>{{ formatCompact(getBestAvgKmWeek()?.avg_km_per_worked_dog ?? 0, 1) }} km</strong>
+        <span class="insight-meta">{{ getBestAvgKmWeek()?.week_label }}</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="page-card chart-card">
+        <div class="section-head">
+          <h3>Total km by week</h3>
+          <p class="muted">Weekly distance trend for worked dogs.</p>
+        </div>
+
+        <div class="bar-chart">
+          @for (item of weeklyItems(); track item.week_start) {
+            <div class="bar-column">
+              <div class="bar-value">{{ item.total_km }}</div>
+              <div class="bar-track">
+                <div class="bar bar-blue" [style.height]="kmBarHeight(item.total_km)"></div>
+              </div>
+              <div class="bar-label">{{ shortWeekLabel(item) }}</div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="page-card chart-card">
+        <div class="section-head">
+          <h3>Worked dogs by week</h3>
+          <p class="muted">How many dogs actually worked each week.</p>
+        </div>
+
+        <div class="bar-chart">
+          @for (item of weeklyItems(); track item.week_start) {
+            <div class="bar-column">
+              <div class="bar-value">{{ item.worked_dogs }}</div>
+              <div class="bar-track">
+                <div class="bar bar-dark" [style.height]="workedDogsBarHeight(item.worked_dogs)"></div>
+              </div>
+              <div class="bar-label">{{ shortWeekLabel(item) }}</div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="page-card chart-card chart-card-wide">
+        <div class="section-head">
+          <h3>Risk and underuse trend</h3>
+          <p class="muted">Weekly snapshot of high risk, moderate risk and underused dogs.</p>
+        </div>
+
+        <div class="chart-with-axis">
+          <div class="y-axis">
+            @for (tick of yAxisTicks(maxRiskCount(), 0); track $index) {
+              <span class="y-axis-label" [style.top.%]="$index * 25">
+                {{ tick.label }}
+              </span>
+            }
+          </div>
+
+          <div class="line-chart">
+            <svg viewBox="0 0 1000 220" preserveAspectRatio="none" class="line-svg">
+              @for (tick of yAxisTicks(maxRiskCount(), 0); track $index) {
+                <line class="grid-line" x1="0" [attr.y1]="tick.y" x2="1000" [attr.y2]="tick.y"></line>
+              }
+
+              <polyline class="line-path line-high" [attr.points]="highRiskLinePoints()"></polyline>
+              <polyline class="line-path line-moderate" [attr.points]="moderateRiskLinePoints()"></polyline>
+              <polyline class="line-path line-underused" [attr.points]="underusedLinePoints()"></polyline>
+
+              @for (dot of highRiskDots(); track $index) {
+                <circle class="line-dot dot-high" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4"></circle>
+              }
+
+              @for (dot of moderateRiskDots(); track $index) {
+                <circle class="line-dot dot-moderate" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4"></circle>
+              }
+
+              @for (dot of underusedDots(); track $index) {
+                <circle class="line-dot dot-underused" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4"></circle>
+              }
+            </svg>
+
+            <div class="line-labels">
+              @for (item of weeklyItems(); track item.week_start) {
+                <span>{{ shortWeekLabel(item) }}</span>
+              }
+            </div>
+
+            <div class="legend">
+              <span class="legend-item">
+                <span class="legend-dot legend-high"></span>
+                High risk
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-moderate"></span>
+                Moderate risk
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-underused"></span>
+                Underused
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card chart-card chart-card-wide">
+        <div class="section-head">
+          <h3>Average km per worked dog</h3>
+          <p class="muted">Weekly efficiency indicator for worked dogs.</p>
+        </div>
+
+        <div class="chart-with-axis">
+          <div class="y-axis">
+            @for (tick of yAxisTicks(maxAvgKm(), 1); track $index) {
+              <span class="y-axis-label" [style.top.%]="$index * 25">
+                {{ tick.label }}
+              </span>
+            }
+          </div>
+
+          <div class="line-chart">
+            <svg viewBox="0 0 1000 220" preserveAspectRatio="none" class="line-svg">
+              @for (tick of yAxisTicks(maxAvgKm(), 1); track $index) {
+                <line class="grid-line" x1="0" [attr.y1]="tick.y" x2="1000" [attr.y2]="tick.y"></line>
+              }
+
+              <polyline class="line-path line-blue" [attr.points]="avgKmLinePoints()"></polyline>
+
+              @for (dot of avgKmDots(); track $index) {
+                <circle class="line-dot dot-blue" [attr.cx]="dot.x" [attr.cy]="dot.y" r="4"></circle>
+                <text
+                  class="point-label point-label-blue"
+                  [attr.x]="dot.x"
+                  [attr.y]="pointLabelY(dot.y, 0)"
+                  text-anchor="middle"
+                >
+                  {{ formatCompact(weeklyItems()[$index].avg_km_per_worked_dog, 1) }}
+                </text>
+              }
+            </svg>
+
+            <div class="line-labels">
+              @for (item of weeklyItems(); track item.week_start) {
+                <span>{{ shortWeekLabel(item) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else if (!isLoading()) {
+    <div class="placeholder-box">No analytics data available for the selected period.</div>
+  }
+
+  @if (comparison()) {
+    <div class="page-card compare-card">
+      <div class="section-head">
+        <h3>Week comparison</h3>
+        <p class="muted">
+          {{ comparison()!.week_a.week_label }} vs {{ comparison()!.week_b.week_label }}
+        </p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-metric">
+          <span class="compare-label">Total km</span>
+          <strong>{{ comparison()!.week_a.total_km }} → {{ comparison()!.week_b.total_km }}</strong>
+          <span
+            class="compare-delta"
+            [ngClass]="compareDeltaClass('total_km', comparison()!.delta.total_km)"
+          >
+            {{ deltaPrefix(comparison()!.delta.total_km) }}{{ comparison()!.delta.total_km }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint('total_km', comparison()!.delta.total_km)
+          }}</span>
+        </div>
+
+        <div class="compare-metric">
+          <span class="compare-label">Worked dogs</span>
+          <strong>{{ comparison()!.week_a.worked_dogs }} → {{ comparison()!.week_b.worked_dogs }}</strong>
+          <span
+            class="compare-delta"
+            [ngClass]="compareDeltaClass('worked_dogs', comparison()!.delta.worked_dogs)"
+          >
+            {{ deltaPrefix(comparison()!.delta.worked_dogs) }}{{ comparison()!.delta.worked_dogs }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint('worked_dogs', comparison()!.delta.worked_dogs)
+          }}</span>
+        </div>
+
+        <div class="compare-metric">
+          <span class="compare-label">Avg km / worked dog</span>
+          <strong>
+            {{ comparison()!.week_a.avg_km_per_worked_dog }} →
+            {{ comparison()!.week_b.avg_km_per_worked_dog }}
+          </strong>
+          <span
+            class="compare-delta"
+            [ngClass]="
+              compareDeltaClass(
+                'avg_km_per_worked_dog',
+                comparison()!.delta.avg_km_per_worked_dog
+              )
+            "
+          >
+            {{ deltaPrefix(comparison()!.delta.avg_km_per_worked_dog) }}{{
+              comparison()!.delta.avg_km_per_worked_dog
+            }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint(
+              'avg_km_per_worked_dog',
+              comparison()!.delta.avg_km_per_worked_dog
+            )
+          }}</span>
+        </div>
+
+        <div class="compare-metric">
+          <span class="compare-label">High risk</span>
+          <strong>
+            {{ comparison()!.week_a.high_risk_dogs }} →
+            {{ comparison()!.week_b.high_risk_dogs }}
+          </strong>
+          <span
+            class="compare-delta"
+            [ngClass]="compareDeltaClass('high_risk_dogs', comparison()!.delta.high_risk_dogs)"
+          >
+            {{ deltaPrefix(comparison()!.delta.high_risk_dogs) }}{{
+              comparison()!.delta.high_risk_dogs
+            }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint('high_risk_dogs', comparison()!.delta.high_risk_dogs)
+          }}</span>
+        </div>
+
+        <div class="compare-metric">
+          <span class="compare-label">Moderate risk</span>
+          <strong>
+            {{ comparison()!.week_a.moderate_risk_dogs }} →
+            {{ comparison()!.week_b.moderate_risk_dogs }}
+          </strong>
+          <span
+            class="compare-delta"
+            [ngClass]="
+              compareDeltaClass('moderate_risk_dogs', comparison()!.delta.moderate_risk_dogs)
+            "
+          >
+            {{ deltaPrefix(comparison()!.delta.moderate_risk_dogs) }}{{
+              comparison()!.delta.moderate_risk_dogs
+            }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint('moderate_risk_dogs', comparison()!.delta.moderate_risk_dogs)
+          }}</span>
+        </div>
+
+        <div class="compare-metric">
+          <span class="compare-label">Underused</span>
+          <strong>
+            {{ comparison()!.week_a.underused_dogs }} →
+            {{ comparison()!.week_b.underused_dogs }}
+          </strong>
+          <span
+            class="compare-delta"
+            [ngClass]="compareDeltaClass('underused_dogs', comparison()!.delta.underused_dogs)"
+          >
+            {{ deltaPrefix(comparison()!.delta.underused_dogs) }}{{
+              comparison()!.delta.underused_dogs
+            }}
+          </span>
+          <span class="compare-hint">{{
+            compareDeltaHint('underused_dogs', comparison()!.delta.underused_dogs)
+          }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</div>
