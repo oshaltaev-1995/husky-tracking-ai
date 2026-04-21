@@ -74,9 +74,9 @@
 
     <div class="export-toolbar">
       <div class="export-copy">
-        <strong>Export</strong>
+        <strong>Export options</strong>
         <span class="muted">
-          Excel export is compact and manager-friendly. Raw run logs are exported separately as CSV for large periods.
+          Excel includes Overview, Weekly Comparison, Kennel Summary and Dog Weekly Summary. PDF gives a compact manager report with charts.
         </span>
       </div>
 
@@ -92,11 +92,20 @@
 
         <button
           type="button"
+          class="primary-btn"
+          (click)="exportSummaryPdf()"
+          [disabled]="!weeklyItems().length || isExportingPdf()"
+        >
+          {{ isExportingPdf() ? 'Exporting PDF...' : 'Export PDF' }}
+        </button>
+
+        <button
+          type="button"
           class="secondary-btn"
           (click)="exportRawLogsCsv()"
           [disabled]="!dateFrom || !dateTo || isExportingRawLogs()"
         >
-          {{ isExportingRawLogs() ? 'Exporting raw logs...' : 'Export Raw Logs CSV' }}
+          {{ isExportingRawLogs() ? 'Exporting raw logs...' : 'Raw Logs CSV' }}
         </button>
 
         <button
@@ -105,7 +114,7 @@
           (click)="exportWeeklyCsv()"
           [disabled]="!weeklyItems().length || isExporting()"
         >
-          {{ isExporting() ? 'Exporting CSV...' : 'Export Weekly CSV' }}
+          {{ isExporting() ? 'Exporting weekly CSV...' : 'Weekly CSV' }}
         </button>
       </div>
     </div>

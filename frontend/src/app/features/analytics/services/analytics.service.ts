@@ -60,6 +60,24 @@ export class AnalyticsService {
     });
   }
 
+  exportSummaryPdf(
+    dateFrom: string,
+    dateTo: string,
+    weekAStart?: string,
+    weekBStart?: string
+  ): Observable<Blob> {
+    let params = new HttpParams().set('date_from', dateFrom).set('date_to', dateTo);
+
+    if (weekAStart && weekBStart) {
+      params = params.set('week_a_start', weekAStart).set('week_b_start', weekBStart);
+    }
+
+    return this.http.get(`${this.apiBaseUrl}/exports/analytics-summary.pdf`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
   exportRawRunLogsCsv(dateFrom: string, dateTo: string): Observable<Blob> {
     const params = new HttpParams().set('date_from', dateFrom).set('date_to', dateTo);
 

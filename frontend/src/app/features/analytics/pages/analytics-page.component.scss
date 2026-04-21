@@ -87,17 +87,18 @@
 }
 
 .export-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
-  padding-top: 4px;
+  align-items: center;
+  padding-top: 8px;
   border-top: 1px solid #eef2f7;
 }
 
 .export-copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
 
   strong {
     font-size: 14px;
@@ -106,13 +107,16 @@
 
   span {
     font-size: 13px;
+    line-height: 1.4;
   }
 }
 
 .export-actions {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .primary-btn,
@@ -543,6 +547,16 @@
   .compare-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
+
+  .export-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .export-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -568,11 +582,6 @@
   .y-axis {
     display: none;
   }
-
-  .export-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
 }
 
 @media (max-width: 720px) {
@@ -584,5 +593,10 @@
   .insights-grid,
   .compare-grid {
     grid-template-columns: 1fr;
+  }
+
+  .export-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

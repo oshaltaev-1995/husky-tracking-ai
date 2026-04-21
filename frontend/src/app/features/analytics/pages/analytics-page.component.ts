@@ -42,6 +42,7 @@ export class AnalyticsPageComponent implements OnInit {
   readonly isComparing = signal(false);
   readonly isExporting = signal(false);
   readonly isExportingWorkbook = signal(false);
+  readonly isExportingPdf = signal(false);
   readonly isExportingRawLogs = signal(false);
   readonly errorMessage = signal('');
 
@@ -190,9 +191,7 @@ export class AnalyticsPageComponent implements OnInit {
 
       const csv = [header, ...rows]
         .map((row) =>
-          row
-            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-            .join(',')
+          row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')
         )
         .join('\n');
 
@@ -238,6 +237,38 @@ export class AnalyticsPageComponent implements OnInit {
           console.error('Failed to export workbook', error);
           this.errorMessage.set('Failed to export Excel workbook.');
           this.isExportingWorkbook.set(false);
+        },
+      });
+  }
+
+  exportSummaryPdf(): void {
+    if (!this.dateFrom || !this.dateTo) {
+      return;
+    }
+
+    this.isExportingPdf.set(true);
+
+    this.analyticsService
+      .exportSummaryPdf(
+        this.dateFrom,
+        this.dateTo,
+        this.selectedWeekA || undefined,
+        this.selectedWeekB || undefined
+      )
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `husky-analytics-summary-${this.dateFrom}-to-${this.dateTo}.pdf`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          this.isExportingPdf.set(false);
+        },
+        error: (error) => {
+          console.error('Failed to export PDF summary', error);
+          this.errorMessage.set('Failed to export PDF summary.');
+          this.isExportingPdf.set(false);
         },
       });
   }

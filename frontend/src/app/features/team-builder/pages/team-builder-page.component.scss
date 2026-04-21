@@ -54,7 +54,14 @@
   margin-top: 18px;
 }
 
-.primary-btn {
+.form-actions--split {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primary-btn,
+.secondary-btn {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 12px 16px;
@@ -62,12 +69,32 @@
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
+}
+
+.primary-btn {
   background: #2563eb;
   color: #fff;
 }
 
-.primary-btn:hover {
+.primary-btn:hover:not(:disabled) {
   background: #1d4ed8;
+}
+
+.secondary-btn {
+  background: #fff;
+  color: #1f2937;
+  border-color: #d1d5db;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.primary-btn:disabled,
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .helper-box {
@@ -303,6 +330,121 @@
   }
 }
 
+.print-only {
+  display: none;
+}
+
+.print-sheet {
+  color: #111827;
+  background: #ffffff;
+  width: 100%;
+}
+
+.print-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.print-sheet__header h1 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.print-meta {
+  font-size: 9px;
+  line-height: 1.25;
+  color: #4b5563;
+}
+
+.print-meta--right {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.print-teams-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4mm;
+  align-items: start;
+}
+
+.print-team-card {
+  border: 1px solid #111827;
+  border-radius: 6px;
+  padding: 5px 6px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  background: #ffffff;
+  min-height: 0;
+}
+
+.print-team-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.print-team-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.print-team-subtitle {
+  font-size: 8px;
+  color: #4b5563;
+}
+
+.print-team-rows {
+  display: grid;
+  gap: 2px;
+}
+
+.print-row {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 5px;
+  align-items: start;
+  min-height: 14px;
+}
+
+.print-row__role {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  padding-top: 1px;
+}
+
+.print-row__dogs {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.print-row__meta {
+  font-size: 7px;
+  color: #6b7280;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.print-team-warning {
+  margin-top: 4px;
+  font-size: 7px;
+  color: #92400e;
+}
+
 @media (max-width: 1200px) {
   .teams-grid {
     grid-template-columns: 1fr;
@@ -333,5 +475,93 @@
     width: 3px;
     height: 26px;
     justify-self: center;
+  }
+
+  .form-actions--split {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 6mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .team-builder-page {
+    display: block !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet__header {
+    margin-bottom: 6px;
+  }
+
+  .print-teams-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  .print-team-card {
+    box-shadow: none !important;
+  }
+
+  :host ::ng-deep app-root > *:not(router-outlet),
+  :host ::ng-deep app-shell > *:not(router-outlet),
+  :host ::ng-deep .app-shell__sidebar,
+  :host ::ng-deep .app-shell__header,
+  :host ::ng-deep .sidebar,
+  :host ::ng-deep nav,
+  :host ::ng-deep aside {
+    display: none !important;
+  }
+
+  :host ::ng-deep router-outlet {
+    display: none !important;
+  }
+
+  :host ::ng-deep body * {
+    visibility: hidden;
+  }
+
+  :host ::ng-deep .team-builder-page,
+  :host ::ng-deep .team-builder-page * {
+    visibility: visible;
+  }
+
+  :host ::ng-deep .team-builder-page {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
   }
 }

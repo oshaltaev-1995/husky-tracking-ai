@@ -15,7 +15,6 @@ import {
   HarnessDog,
   HarnessLayout,
   HarnessRow,
-  SuggestedTeam,
   TeamBuilderRequest,
   TeamBuilderResponse,
   TeamDogAssignment,
@@ -76,11 +75,26 @@ export class TeamBuilderPageComponent {
     });
   }
 
+  printTeams(): void {
+    if (!this.response?.teams?.length) {
+      return;
+    }
+
+    window.print();
+  }
+
   rowRoleLabel(role: string): string {
     if (role === 'lead') return 'Lead';
     if (role === 'team') return 'Center';
     if (role === 'wheel') return 'Wheel';
     return role;
+  }
+
+  rowRolePrintLabel(role: string): string {
+    if (role === 'lead') return 'LEAD';
+    if (role === 'team') return 'CENTER';
+    if (role === 'wheel') return 'WHEEL';
+    return role.toUpperCase();
   }
 
   rowRelationLabel(relation: string | null): string {
@@ -103,6 +117,31 @@ export class TeamBuilderPageComponent {
         return 'Single fallback';
       case 'solo':
         return 'Solo';
+      default:
+        return '';
+    }
+  }
+
+  rowRelationPrintLabel(relation: string | null): string {
+    switch (relation) {
+      case 'forced_pair':
+        return 'forced';
+      case 'home_pair':
+        return 'home';
+      case 'preferred_pair':
+        return 'pref';
+      case 'allowed_pair':
+        return 'pair';
+      case 'single_lead':
+        return 'solo lead';
+      case 'single_center':
+        return 'single';
+      case 'single_wheel':
+        return 'single';
+      case 'single_fallback':
+        return 'single';
+      case 'solo':
+        return 'solo';
       default:
         return '';
     }
@@ -168,6 +207,27 @@ export class TeamBuilderPageComponent {
 
   trackHarnessDog(index: number, dog: HarnessDog): number {
     return dog.dog_id;
+  }
+
+  compactRowDogs(row: HarnessRow): string {
+    return row.dogs.map((dog) => dog.dog_name).join(' — ');
+  }
+
+  compactRowMeta(row: HarnessRow): string {
+    const relation = this.rowRelationPrintLabel(row.relation);
+    const warnings = row.warnings?.length ? ' !' : '';
+    return relation ? `${relation}${warnings}` : warnings.trim();
+  }
+
+  teamLayoutLabel(layout: HarnessLayout): string {
+    const leadCount = layout.lead_rows.reduce((sum, row) => sum + row.dogs.length, 0);
+    const centerCount = layout.team_rows.reduce((sum, row) => sum + row.dogs.length, 0);
+    const wheelCount = layout.wheel_rows.reduce((sum, row) => sum + row.dogs.length, 0);
+    return `${leadCount}-${centerCount}-${wheelCount}`;
+  }
+
+  printGeneratedAt(): string {
+    return new Date().toLocaleString();
   }
 
   private humanizeReason(reason: string): string {

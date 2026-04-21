@@ -1,5 +1,5 @@
 <div class="team-builder-page">
-  <div class="page-card top-card">
+  <div class="page-card top-card screen-only">
     <div class="page-title top-head">
       <div>
         <h2>Team Builder</h2>
@@ -70,9 +70,18 @@
       </div>
     </div>
 
-    <div class="form-actions">
+    <div class="form-actions form-actions--split">
       <button type="button" class="primary-btn" (click)="buildTeams()" [disabled]="isLoading">
         {{ isLoading ? 'Building...' : 'Build teams' }}
+      </button>
+
+      <button
+        type="button"
+        class="secondary-btn"
+        (click)="printTeams()"
+        [disabled]="!response?.teams?.length"
+      >
+        Print teams
       </button>
     </div>
 
@@ -86,7 +95,7 @@
   </div>
 
   @if (response?.global_warnings?.length) {
-    <div class="page-card warnings-card">
+    <div class="page-card warnings-card screen-only">
       <h3>Global warnings</h3>
       <ul class="warning-list">
         @for (warning of response!.global_warnings; track warning) {
@@ -97,7 +106,7 @@
   }
 
   @if (response?.teams?.length) {
-    <div class="teams-grid">
+    <div class="teams-grid screen-only">
       @for (team of response!.teams; track team.team_number) {
         <div class="page-card team-card">
           <div class="team-card-head">
@@ -219,7 +228,7 @@
   }
 
   @if (response?.unassigned_dogs?.length) {
-    <div class="page-card">
+    <div class="page-card screen-only">
       <div class="section-head">
         <h3>Unassigned dogs</h3>
         <p class="muted">Eligible dogs left outside the suggested teams.</p>
@@ -252,7 +261,7 @@
   }
 
   @if (response?.excluded_dogs?.length) {
-    <div class="page-card">
+    <div class="page-card screen-only">
       <div class="section-head">
         <h3>Excluded dogs</h3>
         <p class="muted">Dogs filtered out before building due to eligibility, risk, or special rules.</p>
@@ -267,6 +276,54 @@
                 <li>{{ reason }}</li>
               }
             </ul>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (response?.teams?.length) {
+    <div class="print-sheet print-only">
+      <div class="print-sheet__header">
+        <div>
+          <h1>Team Builder Print Sheet</h1>
+          <div class="print-meta">
+            Program: {{ form.program_type }} |
+            Sled: {{ form.sled_type }} |
+            Teams: {{ response!.teams.length }} |
+            Dogs/team: {{ form.min_dogs_per_team }}-{{ form.max_dogs_per_team }}
+          </div>
+        </div>
+        <div class="print-meta print-meta--right">
+          Generated: {{ printGeneratedAt() }}
+        </div>
+      </div>
+
+      <div class="print-teams-grid">
+        @for (team of response!.teams; track team.team_number) {
+          <div class="print-team-card">
+            <div class="print-team-card__head">
+              <span class="print-team-title">Team {{ team.team_number }}</span>
+              <span class="print-team-subtitle">
+                {{ team.dogs.length }} dogs · {{ teamLayoutLabel(team.layout) }}
+              </span>
+            </div>
+
+            <div class="print-team-rows">
+              @for (row of flattenRows(team.layout); track trackRow($index, row)) {
+                <div class="print-row">
+                  <div class="print-row__role">{{ rowRolePrintLabel(row.row_role) }}</div>
+                  <div class="print-row__dogs">{{ compactRowDogs(row) }}</div>
+                  <div class="print-row__meta">{{ compactRowMeta(row) }}</div>
+                </div>
+              }
+            </div>
+
+            @if (team.warnings.length > 0) {
+              <div class="print-team-warning">
+                {{ team.warnings.length }} warning{{ team.warnings.length > 1 ? 's' : '' }}
+              </div>
+            }
           </div>
         }
       </div>
