@@ -1,0 +1,50 @@
+site_name: Husky Tracking AI
+site_description: Full-stack sled dog operations, analytics, and planning system
+site_author: Oleg Shaltaev
+repo_url: https://github.com/oshaltaev-1995/husky-tracking-ai
+repo_name: oshaltaev-1995/husky-tracking-ai
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - scheme: default
+      primary: blue
+      accent: indigo
+
+nav:
+  - Home: index.md
+  - Overview: overview.md
+  - Features: features.md
+  - Deployment: deployment.md
+  - Operations: operations.md
+  - Roadmap: roadmap.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/oshaltaev-1995/husky-tracking-ai

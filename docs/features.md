@@ -12,7 +12,7 @@ Current dashboard-oriented functionality includes:
 - underused dogs
 - overview metrics
 
-The dashboard is intended to help managers quickly identify which dogs require attention and how balanced current operational use has been.
+The dashboard helps managers quickly identify which dogs require attention and how balanced current operational use has been.
 
 ## Dog Management
 

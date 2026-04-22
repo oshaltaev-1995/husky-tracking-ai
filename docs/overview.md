@@ -19,9 +19,9 @@ This includes:
 - making weekly and period-based analytics easier to access
 - improving export and communication with managers and field staff
 
-## Why this project is meaningful
+## Why this project matters
 
-This is not just a CRUD system. The project includes actual domain logic such as:
+This is not just a CRUD system. The project includes real domain logic such as:
 
 - workload awareness
 - eligibility logic
@@ -32,6 +32,7 @@ This is not just a CRUD system. The project includes actual domain logic such as
 - compact field-oriented print output
 
 Because of that, the project combines:
+
 - software engineering
 - operational planning
 - analytics
@@ -50,7 +51,7 @@ The system is intended to support real kennel operations, including:
 - field-friendly team printouts
 - data-driven improvement of team composition logic over time
 
-## Architectural model
+## Architecture model
 
 The application is built as a standard full-stack system:
 

@@ -73,19 +73,9 @@ The current maintenance setup supports:
 
 ## Operations guide
 
-Deployment and maintenance commands are documented in:
+Day-to-day deployment and maintenance commands are documented in:
 
-- `OPERATIONS.md`
-
-This includes:
-
-- connecting to the server
-- checking running services
-- reading logs
-- creating backups
-- restoring the database
-- rerunning migrations
-- redeploying updated versions
+- repository root `OPERATIONS.md`
 
 ## Current deployment limitations
 
@@ -100,7 +90,7 @@ Not-yet-finalized infrastructure items include:
 - automated backup scheduling
 - uptime monitoring
 
-## Why deployment matters for this project
+## Why deployment matters
 
 Deployment is an important part of the project because it turns the application from a local development exercise into a real accessible system.
 
