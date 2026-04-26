@@ -494,6 +494,9 @@
     background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .screen-only {
@@ -511,6 +514,9 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    position: relative !important;
+    z-index: 9999 !important;
   }
 
   .print-sheet {
@@ -518,6 +524,7 @@
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
   }
 
   .print-sheet__header {
@@ -534,34 +541,39 @@
     box-shadow: none !important;
   }
 
-  :host ::ng-deep app-root > *:not(router-outlet),
-  :host ::ng-deep app-shell > *:not(router-outlet),
-  :host ::ng-deep .app-shell__sidebar,
-  :host ::ng-deep .app-shell__header,
-  :host ::ng-deep .sidebar,
-  :host ::ng-deep nav,
-  :host ::ng-deep aside {
-    display: none !important;
+  ::ng-deep app-root,
+  ::ng-deep app-shell,
+  ::ng-deep .app-shell,
+  ::ng-deep .app-shell__sidebar,
+  ::ng-deep .app-shell__header,
+  ::ng-deep .sidebar,
+  ::ng-deep nav,
+  ::ng-deep aside,
+  ::ng-deep header,
+  ::ng-deep footer {
+    background: #ffffff !important;
   }
 
-  :host ::ng-deep router-outlet {
-    display: none !important;
+  ::ng-deep app-root * {
+    visibility: hidden !important;
   }
 
-  :host ::ng-deep body * {
-    visibility: hidden;
+  ::ng-deep .team-builder-page,
+  ::ng-deep .team-builder-page * {
+    visibility: visible !important;
   }
 
-  :host ::ng-deep .team-builder-page,
-  :host ::ng-deep .team-builder-page * {
-    visibility: visible;
-  }
-
-  :host ::ng-deep .team-builder-page {
+  ::ng-deep .team-builder-page {
     position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    inset: 0 !important;
     width: 100% !important;
+    min-height: 100vh !important;
+    background: #ffffff !important;
+  }
+
+  ::ng-deep .print-sheet {
+    position: relative !important;
+    z-index: 10000 !important;
     background: #ffffff !important;
   }
 }
