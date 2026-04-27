@@ -43,10 +43,7 @@ services:
     container_name: husky-tracking-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-4200}:4200"
-    volumes:
-      - ./frontend:/workspace/frontend
-      - /workspace/frontend/node_modules
+      - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       - backend
 
