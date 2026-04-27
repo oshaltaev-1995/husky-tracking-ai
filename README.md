@@ -109,6 +109,16 @@ The application already includes a meaningful amount of domain-specific logic, i
 
 This makes the project more than just a CRUD application. It is an operational planning system with real domain rules.
 
+## Live deployment
+
+A deployed version of the application is available on a VPS server:
+
+- **Live application:** `http://89.124.87.216`
+
+The project is also documented online:
+
+- **Project documentation:** `https://oshaltaev-1995.github.io/husky-tracking-ai/`
+
 ## Local development
 
 ### Requirements
@@ -121,7 +131,16 @@ This makes the project more than just a CRUD application. It is an operational p
 docker compose up -d --build
 ```
 
-Then open the application in the browser.
+## Open locally
+
+- Frontend: `http://localhost:4200`
+- Backend docs: `http://localhost:8000/docs`
+
+## Notes
+
+The local environment uses `docker-compose.yml`.
+
+The production deployment uses `docker-compose.prod.yml`.
 
 ## Production deployment
 
@@ -132,6 +151,8 @@ A production-style deployment is configured with:
 - backend running in production mode
 - PostgreSQL in Docker
 - backup and restore workflow documented in `OPERATIONS.md`
+
+The production version is deployed on a VPS server and runs as a live accessible web application.
 
 ## Operations
 
